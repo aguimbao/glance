@@ -1,0 +1,50 @@
+name: cleanup-packages
+
+on:
+  schedule:
+    - cron: "0 0 * * 0"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-24.04
+    env:
+      MISE_SCOPE: "ci-cleanup-packages"
+      PROTON_PASS_PERSONAL_ACCESS_TOKEN: ${{ secrets.PROTON_PASS_PERSONAL_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        # zizmor: ignore[cache-poisoning]
+        with:
+          cache: true
+          install: false
+
+      - name: Setup tools
+        run: mise install && mise run setup-pass-cli
+
+      - name: Fetch token from Proton Pass
+        id: fnox-token
+        run: |
+          token=$(fnox get GH_TOKEN)
+          echo "::add-mask::$token"
+          echo "token=$token" >> "$GITHUB_OUTPUT"
+
+      - name: Prune old GHCR image versions
+        uses: snok/container-retention-policy@d3bdcf5ce9b05f685154e4a16c39233b245e3d53 # v3.1.0
+        with:
+          account: user
+          token: ${{ steps.fnox-token.outputs.token }}
+          image-names: glance,glance-scrapper
+          tag-selection: both
+          cut-off: 1d
+          keep-n-most-recent: 10

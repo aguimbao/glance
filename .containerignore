@@ -1,0 +1,9 @@
+**/*
+!Containerfile*
+!.miserc.toml
+!.mise/**
+!entrypoint.nu
+!fnox.scrapper.toml
+!config/**
+!scraper/**
+scraper/node_modules

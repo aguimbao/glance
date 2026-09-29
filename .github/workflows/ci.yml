@@ -1,0 +1,208 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+      - "v*"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    env:
+      MISE_SCOPE: "ci-lint"
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      container: ${{ steps.filter.outputs.container }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            container:
+              - 'Containerfile*'
+              - 'entrypoint.nu'
+              - '.miserc.toml'
+              - '.mise/**'
+              - 'fnox*.toml'
+              - 'pitchfork.toml'
+              - 'config/**'
+              - 'scraper/**'
+              - '.github/workflows/ci.yml'
+
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        # zizmor: ignore[cache-poisoning]
+        with:
+          cache: true
+          install: false
+
+      - name: Setup tools
+        run: mise install
+
+      - name: Check code
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: mise run lint
+
+      - name: Verify clean worktree
+        run: git diff --exit-code
+
+      - name: Validate commit messages
+        if: github.event_name == 'pull_request'
+        run: commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
+
+  test:
+    needs:
+      - lint
+    if: needs.lint.outputs.container == 'true' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    env:
+      MISE_SCOPE: "ci-test"
+      PROTON_PASS_PERSONAL_ACCESS_TOKEN: ${{ secrets.PROTON_PASS_PERSONAL_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        # zizmor: ignore[cache-poisoning]
+        with:
+          cache: true
+          install: false
+
+      - name: Setup tools
+        run: mise install && mise run setup-pass-cli
+
+      - name: Run container tests
+        run: mise run test
+
+  ci-gate:
+    runs-on: ubuntu-24.04
+    needs:
+      - lint
+      - test
+    if: always()
+    steps:
+      - name: Evaluate status
+        run: |
+          lint_status="${{ needs.lint.result }}"
+          test_status="${{ needs.test.result }}"
+          if [ "$lint_status" = "success" ] && { [ "$test_status" = "success" ] || [ "$test_status" = "skipped" ]; }; then
+            echo "CI passed."
+            exit 0
+          fi
+          echo "CI failed: lint=$lint_status, test=$test_status"
+          exit 1
+
+  publish:
+    runs-on: ubuntu-24.04
+    needs:
+      - lint
+      - test
+    if: (needs.lint.outputs.container == 'true' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for scrapper
+        id: meta-scrapper
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository }}-scrapper
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+
+      - name: Build and push scrapper image
+        id: build-scrapper
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: Containerfile.scrapper
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta-scrapper.outputs.tags }}
+          labels: ${{ steps.meta-scrapper.outputs.labels }}
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate scrapper artifact attestation
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ghcr.io/${{ github.repository }}-scrapper
+          subject-digest: ${{ steps.build-scrapper.outputs.digest }}
+          push-to-registry: true
+
+      - name: Extract metadata for glance
+        id: meta-glance
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+
+      - name: Build and push glance image
+        id: build-glance
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: Containerfile.glance
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta-glance.outputs.tags }}
+          labels: ${{ steps.meta-glance.outputs.labels }}
+
+      - name: Generate glance artifact attestation
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.build-glance.outputs.digest }}
+          push-to-registry: true

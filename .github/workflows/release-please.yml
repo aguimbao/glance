@@ -1,0 +1,122 @@
+name: release-please
+
+on:
+  workflow_run: # zizmor: ignore[dangerous-triggers]
+    workflows:
+      - ci
+    branches:
+      - main
+    types:
+      - completed
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    env:
+      MISE_SCOPE: "ci-release-please"
+      PROTON_PASS_PERSONAL_ACCESS_TOKEN: ${{ secrets.PROTON_PASS_PERSONAL_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        # zizmor: ignore[cache-poisoning]
+        with:
+          cache: true
+          install: false
+
+      - name: Setup tools
+        run: mise install && mise run setup-pass-cli
+
+      - name: Load secrets from fnox
+        run: |
+          SECRETS_JSON="$(fnox export --all --format json)"
+          export SECRETS_JSON
+          node -e '
+            const data = JSON.parse(process.env.SECRETS_JSON);
+            const secrets = data.secrets || {};
+            const fs = require("fs");
+            for (const [k, v] of Object.entries(secrets)) {
+              if (v) {
+                console.log("::add-mask::" + v);
+                const delimiter = "EOF_" + Date.now() + "_" + Math.random();
+                fs.appendFileSync(process.env.GITHUB_ENV, k + "<<" + delimiter + "\n" + v + "\n" + delimiter + "\n");
+              }
+            }
+          '
+
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app_token
+        with:
+          client-id: ${{ env.GH_APP_ID }}
+          private-key: ${{ env.GH_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: write
+
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: release_please
+        with:
+          token: ${{ steps.app_token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - name: Re-sign release PR commits
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          github-token: ${{ steps.app_token.outputs.token }}
+          script: |
+            const { owner, repo } = context.repo;
+            const { data: prs } = await github.rest.pulls.list({
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const releasePrs = prs.filter(p =>
+              p.labels.some(l => l.name === 'autorelease: pending') ||
+              p.title.startsWith('chore(main): release')
+            );
+
+            for (const pr of releasePrs) {
+              const { data: commits } = await github.rest.pulls.listCommits({
+                owner,
+                repo,
+                pull_number: pr.number,
+              });
+              if (commits.every(c => c.commit.verification?.verified)) {
+                core.info(`PR #${pr.number} is already signed and verified.`);
+                continue;
+              }
+              if (commits.length !== 1) {
+                core.warning(`PR #${pr.number} has ${commits.length} commits (expected 1). Skipping re-sign.`);
+                continue;
+              }
+              const commit = commits[0];
+              const commitDetail = await github.rest.git.getCommit({
+                owner,
+                repo,
+                commit_sha: commit.sha,
+              });
+              const newCommit = await github.rest.git.createCommit({
+                owner,
+                repo,
+                message: commitDetail.data.message,
+                tree: commitDetail.data.tree.sha,
+                parents: commitDetail.data.parents.map(p => p.sha),
+              });
+              await github.rest.git.updateRef({
+                owner,
+                repo,
+                ref: `heads/${pr.head.ref}`,
+                sha: newCommit.data.sha,
+                force: true,
+              });
+              core.info(`Re-signed commit on PR #${pr.number}: ${commit.sha} -> ${newCommit.data.sha}`);
+            }

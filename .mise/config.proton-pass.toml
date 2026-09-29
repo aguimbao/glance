@@ -1,0 +1,48 @@
+[tools]
+'aqua:protonpass/pass-cli' = '2.4.1'
+
+[env]
+PROTON_PASS_SESSION_DIR = "{{ [xdg_cache_home, 'pass-cli-' ~ (config_root | trim_start_matches(pat='/') | replace(from='/', to='__'))] | join_path }}"
+
+[tasks.setup-pass-cli]
+description = 'Authenticate Proton Pass CLI via personal access token'
+shell = 'nu -c'
+run = '''
+let creds = (fnox get PROTON_PASS_CREDENTIALS | complete)
+if $creds.exit_code != 0 or ($creds.stdout | str trim) != "true" {
+  print "[setup-pass-cli] Proton Pass not enabled (PROTON_PASS_CREDENTIALS), skipping"
+  error make { msg: "pass-cli is not installed" }
+} else if ((pass-cli info | complete | get exit_code) == 0) {
+  print "[setup-pass-cli] Proton Pass already authenticated"
+} else {
+  let pat = ($env.PROTON_PASS_PERSONAL_ACCESS_TOKEN? | default "" | str trim)
+  if ($pat | is-not-empty) {
+    print "[setup-pass-cli] Logging in to Proton Pass using PROTON_PASS_PERSONAL_ACCESS_TOKEN..."
+    mut logged_in = false
+    for a in 1..5 {
+      let res = (pass-cli login --pat $pat | complete)
+      if $res.exit_code == 0 {
+        if ($res.stdout | is-not-empty) { print ($res.stdout | str trim) }
+        $logged_in = true
+        break
+      }
+      let err = ($res.stderr | str trim)
+      let msg = (if ($err | is-not-empty) { $err } else { $res.stdout | str trim })
+      print -e $"[setup-pass-cli] Attempt ($a)/5 failed \(exit=($res.exit_code)\): ($msg)"
+      if $a < 5 { sleep ($a * 2sec) }
+    }
+    if not $logged_in {
+      error make { msg: "pass-cli login failed after 5 attempts" }
+    }
+  } else if (is-terminal --stdin) {
+    let token = (input --suppress-output "Proton Pass personal access token: " | str trim)
+    if ($token | is-not-empty) {
+      pass-cli login --pat $token
+    } else {
+      error make { msg: "No token provided" }
+    }
+  } else {
+    error make { msg: "Headless mode and PROTON_PASS_PERSONAL_ACCESS_TOKEN unset" }
+  }
+}
+'''

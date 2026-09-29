@@ -1,0 +1,23 @@
+FROM docker.io/glanceapp/glance:v0.8.6@sha256:9dfb09470b207dcb67ac715994bdb1929374ba3f9c0d7df7462c24adf10fd073
+
+LABEL org.opencontainers.image.title="glance" \
+    org.opencontainers.image.description="Glance dashboard" \
+    org.opencontainers.image.source=https://github.com/aguimbao/glance \
+    org.opencontainers.image.licenses=MIT
+
+# Root required: generate-config.nu rewrites the mounted /app/config volume,
+# writable only as the mapped host user (container root under rootless podman).
+# hadolint ignore=DL3002
+USER 0:0
+
+# Alpine-base utility layer: exact apk pins rot with base bumps, the base
+# digest pin above is the reproducibility anchor.
+# hadolint ignore=DL3018
+RUN apk add --no-cache tzdata nushell
+
+COPY --chmod=755 config/generate-config.nu /app/generate-config.nu
+COPY config/glance.yml /app/config/glance.yml
+
+EXPOSE 8080
+
+ENTRYPOINT ["/usr/bin/nu", "-c", "nu /app/generate-config.nu /app/config/glance.yml; exec /app/glance --config /app/config/glance.yml"]

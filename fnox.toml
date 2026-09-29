@@ -1,0 +1,31 @@
+env = 'exec'
+
+import = ['./fnox.scrapper.toml']
+
+[providers.protonpass]
+type = 'proton-pass'
+
+[secrets]
+PROTON_PASS_CREDENTIALS = { default = 'true' }
+
+[profiles.glance.secrets]
+CITIES = { provider = 'protonpass', value = 'MkuxUTjeYqUgsgWbV-ccpno2RJXnZTmAKCIOSwwkdlYdea-70-X5zlzwbpYBHiU5E_rgcZpbL9At9tfAKmmxmA==/R64soTnATbQ2oaWXKreXXYM9mKVaPJa4iRpvGCvQRIwL0F_Bh4o9BYGbD0NxBXNKIeEzvDcS7SOxlUrJL9Aoyw==/CITIES' }
+
+[profiles.github.secrets]
+GH_TOKEN = { provider = 'protonpass', value = 'nSNgRaA5DcOIbKMGo5ed91kOv6eiYlKWHdD-bOQaD1T92N_lkMEFc1s__p0FayfmkYxQK8Ka7rbep-YRTEb8pA==/CjT9NC8oPa2y3If6OYcH4_EDaNO23-6LGNJdNqA7OFUiU_iGSsgd1hRD6IP-eS-nx8YiQUWru4-a4bltU_mArA==/READ_PUBLIC_PAT' }
+GITHUB_TOKEN = { provider = 'protonpass', value = 'nSNgRaA5DcOIbKMGo5ed91kOv6eiYlKWHdD-bOQaD1T92N_lkMEFc1s__p0FayfmkYxQK8Ka7rbep-YRTEb8pA==/CjT9NC8oPa2y3If6OYcH4_EDaNO23-6LGNJdNqA7OFUiU_iGSsgd1hRD6IP-eS-nx8YiQUWru4-a4bltU_mArA==/READ_PUBLIC_PAT' }
+
+[profiles.github-local-renovate.secrets]
+RENOVATE_TOKEN = { provider = 'protonpass', value = 'nSNgRaA5DcOIbKMGo5ed91kOv6eiYlKWHdD-bOQaD1T92N_lkMEFc1s__p0FayfmkYxQK8Ka7rbep-YRTEb8pA==/CjT9NC8oPa2y3If6OYcH4_EDaNO23-6LGNJdNqA7OFUiU_iGSsgd1hRD6IP-eS-nx8YiQUWru4-a4bltU_mArA==/RENOVATE_PAT' }
+GITHUB_COM_TOKEN = { provider = 'protonpass', value = 'nSNgRaA5DcOIbKMGo5ed91kOv6eiYlKWHdD-bOQaD1T92N_lkMEFc1s__p0FayfmkYxQK8Ka7rbep-YRTEb8pA==/CjT9NC8oPa2y3If6OYcH4_EDaNO23-6LGNJdNqA7OFUiU_iGSsgd1hRD6IP-eS-nx8YiQUWru4-a4bltU_mArA==/RENOVATE_PAT' }
+
+[profiles.github-app-ci-release-please.secrets]
+GH_APP_ID = { provider = 'protonpass', value = 'nSNgRaA5DcOIbKMGo5ed91kOv6eiYlKWHdD-bOQaD1T92N_lkMEFc1s__p0FayfmkYxQK8Ka7rbep-YRTEb8pA==/CjT9NC8oPa2y3If6OYcH4_EDaNO23-6LGNJdNqA7OFUiU_iGSsgd1hRD6IP-eS-nx8YiQUWru4-a4bltU_mArA==/APP_AGUIMBAO_CI_RELEASE_PLEASE_ID' }
+GH_APP_PRIVATE_KEY = { provider = 'protonpass', value = 'nSNgRaA5DcOIbKMGo5ed91kOv6eiYlKWHdD-bOQaD1T92N_lkMEFc1s__p0FayfmkYxQK8Ka7rbep-YRTEb8pA==/CjT9NC8oPa2y3If6OYcH4_EDaNO23-6LGNJdNqA7OFUiU_iGSsgd1hRD6IP-eS-nx8YiQUWru4-a4bltU_mArA==/APP_AGUIMBAO_CI_RELEASE_PLEASE_PRIVATE_KEY' }
+
+[profiles.github-app-ci-renovate.secrets]
+GH_APP_ID = { provider = 'protonpass', value = 'nSNgRaA5DcOIbKMGo5ed91kOv6eiYlKWHdD-bOQaD1T92N_lkMEFc1s__p0FayfmkYxQK8Ka7rbep-YRTEb8pA==/CjT9NC8oPa2y3If6OYcH4_EDaNO23-6LGNJdNqA7OFUiU_iGSsgd1hRD6IP-eS-nx8YiQUWru4-a4bltU_mArA==/APP_AGUIMBAO_CI_RENOVATE_ID' }
+GH_APP_PRIVATE_KEY = { provider = 'protonpass', value = 'nSNgRaA5DcOIbKMGo5ed91kOv6eiYlKWHdD-bOQaD1T92N_lkMEFc1s__p0FayfmkYxQK8Ka7rbep-YRTEb8pA==/CjT9NC8oPa2y3If6OYcH4_EDaNO23-6LGNJdNqA7OFUiU_iGSsgd1hRD6IP-eS-nx8YiQUWru4-a4bltU_mArA==/APP_AGUIMBAO_CI_RENOVATE_PRIVATE_KEY' }
+
+[profiles.github-package-cleanup.secrets]
+GH_TOKEN = { provider = 'protonpass', value = 'nSNgRaA5DcOIbKMGo5ed91kOv6eiYlKWHdD-bOQaD1T92N_lkMEFc1s__p0FayfmkYxQK8Ka7rbep-YRTEb8pA==/CjT9NC8oPa2y3If6OYcH4_EDaNO23-6LGNJdNqA7OFUiU_iGSsgd1hRD6IP-eS-nx8YiQUWru4-a4bltU_mArA==/CI_PACKAGE_CLEANUP_CLASSIC_PAT' }

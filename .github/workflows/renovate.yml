@@ -1,0 +1,65 @@
+name: renovate
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  renovate:
+    runs-on: ubuntu-24.04
+    env:
+      MISE_SCOPE: "ci-renovate"
+      PROTON_PASS_PERSONAL_ACCESS_TOKEN: ${{ secrets.PROTON_PASS_PERSONAL_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        # zizmor: ignore[cache-poisoning]
+        with:
+          cache: true
+          install: false
+
+      - name: Setup tools
+        run: mise install && mise run setup-pass-cli
+
+      - name: Load secrets from fnox
+        run: |
+          SECRETS_JSON="$(fnox export --all --format json)"
+          export SECRETS_JSON
+          node -e '
+            const data = JSON.parse(process.env.SECRETS_JSON);
+            const secrets = data.secrets || {};
+            const fs = require("fs");
+            for (const [k, v] of Object.entries(secrets)) {
+              if (v) {
+                console.log("::add-mask::" + v);
+                const delimiter = "EOF_" + Date.now() + "_" + Math.random();
+                fs.appendFileSync(process.env.GITHUB_ENV, k + "<<" + delimiter + "\n" + v + "\n" + delimiter + "\n");
+              }
+            }
+          '
+
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app_token
+        with:
+          client-id: ${{ env.GH_APP_ID }}
+          private-key: ${{ env.GH_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: write
+          permission-workflows: write
+          permission-statuses: write
+
+      - uses: renovatebot/github-action@1cd96b855fee0da6f230617e89dbff0e06ea393a # v46.3.5
+        with:
+          token: ${{ steps.app_token.outputs.token }}
+        env:
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          RENOVATE_PLATFORM_COMMIT: "enabled"
+          RENOVATE_ALLOWED_UNSAFE_EXECUTIONS: '["mise"]'

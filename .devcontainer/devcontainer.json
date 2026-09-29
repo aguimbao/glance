@@ -1,0 +1,19 @@
+{
+  "name": "glance",
+  "build": {
+    "dockerfile": "Containerfile",
+    "options": ["--format=docker"]
+  },
+  "runArgs": [
+    "--device=/dev/fuse",
+    "--device=/dev/net/tun",
+    "--security-opt=label=disable",
+    "--security-opt=seccomp=unconfined",
+    "--security-opt=unmask=ALL",
+    "--userns=keep-id"
+  ],
+  "containerUser": "dev",
+  "remoteUser": "dev",
+  "postCreateCommand": "mise install",
+  "forwardPorts": [3030, 8080]
+}

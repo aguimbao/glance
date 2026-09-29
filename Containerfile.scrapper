@@ -1,0 +1,88 @@
+FROM cgr.dev/chainguard/wolfi-base:latest@sha256:bef0f4d47edc72a93d1537eae54eb53db2b2cc352c028128ff0f16c5b5a3c1e4 AS tools
+
+USER 0:0
+
+SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
+
+RUN apk add --no-cache \
+    bash=5.3-r13 \
+    curl=8.22.0-r3 \
+    ca-certificates-bundle=20260909-r1 \
+    libstdc++=16.2.0-r1 \
+    shadow=4.20.2-r1
+
+RUN mkdir -p /usr/local/bin /home/node/.cache /home/node/.local/share \
+    && groupadd -g 1000 node \
+    && useradd -u 1000 -g 1000 -d /home/node node \
+    && chown -R 1000:1000 /home/node
+
+ENV MISE_VERSION=2026.9.16
+
+RUN curl -fsSL https://mise.run | MISE_VERSION="v${MISE_VERSION}" MISE_INSTALL_PATH=/usr/local/bin/mise sh \
+    && test -x /usr/local/bin/mise
+
+COPY --chown=1000:1000 .miserc.toml /app/.miserc.toml
+COPY --chown=1000:1000 .mise/config.toml .mise/config.proton-pass.toml .mise/config.fnox.toml .mise/config.node.toml .mise/config.scrapper.toml .mise/mise*.lock /app/.mise/
+
+ENV HOME=/home/node
+ENV MISE_TRUSTED_CONFIG_PATHS=/app
+ENV MISE_SCOPE=scrapper
+ENV PATH=/home/node/.local/share/mise/shims:${PATH}
+
+USER 1000:1000
+WORKDIR /app
+RUN --mount=type=secret,id=GITHUB_TOKEN,uid=1000,gid=1000,mode=0444 \
+    --mount=type=cache,target=/home/node/.cache/mise,uid=1000,gid=1000 \
+    if [ -f /run/secrets/GITHUB_TOKEN ]; then GITHUB_TOKEN="$(cat /run/secrets/GITHUB_TOKEN)" && export GITHUB_TOKEN; fi \
+    && mise install && mise reshim
+
+FROM cgr.dev/chainguard/wolfi-base:latest@sha256:bef0f4d47edc72a93d1537eae54eb53db2b2cc352c028128ff0f16c5b5a3c1e4
+
+LABEL org.opencontainers.image.title="glance-scrapper" \
+    org.opencontainers.image.description="Glance scrapper service" \
+    org.opencontainers.image.source=https://github.com/aguimbao/glance \
+    org.opencontainers.image.licenses=MIT
+
+USER 0:0
+
+RUN apk add --no-cache \
+    ca-certificates-bundle=20260909-r1 \
+    libstdc++=16.2.0-r1 \
+    libudev=261.3-r1 \
+    shadow=4.20.2-r1
+
+RUN mkdir -p /usr/local/bin /home/node/.cache /home/node/.local/share \
+    && groupadd -g 1000 node \
+    && useradd -u 1000 -g 1000 -d /home/node node \
+    && chown -R 1000:1000 /home/node
+
+COPY --from=tools /usr/local/bin/mise /usr/local/bin/mise
+COPY --from=tools --chown=1000:1000 /home/node/.local/share/mise /home/node/.local/share/mise
+
+COPY --chown=1000:1000 .miserc.toml /app/.miserc.toml
+COPY --chown=1000:1000 .mise/config.toml .mise/config.proton-pass.toml .mise/config.fnox.toml .mise/config.node.toml .mise/config.scrapper.toml .mise/mise*.lock /app/.mise/
+COPY --chmod=755 entrypoint.nu /app/entrypoint.nu
+
+WORKDIR /app
+
+ENV HOME=/home/node
+ENV MISE_TRUSTED_CONFIG_PATHS=/app
+ENV MISE_SCOPE=scrapper
+ENV PATH=/home/node/.local/share/mise/shims:${PATH}
+
+USER 1000:1000
+COPY --chown=1000:1000 scraper/package.json scraper/tsconfig.json scraper/bun.lock* ./
+COPY --chown=1000:1000 scraper/src ./src
+RUN --mount=type=cache,target=/home/node/.cache/bun,uid=1000,gid=1000 \
+    --mount=type=cache,target=/home/node/.bun/install/cache,uid=1000,gid=1000 \
+    bun install --frozen-lockfile
+
+COPY --chown=1000:1000 fnox.scrapper.toml /app/fnox.toml
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=60s \
+    CMD ["bun", "src/healthcheck.ts"]
+
+ENTRYPOINT ["/app/entrypoint.nu"]
+CMD ["bun", "src/server.ts"]

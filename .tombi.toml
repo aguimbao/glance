@@ -1,0 +1,8 @@
+[files]
+respect-ignore-files = true
+
+[format.rules]
+string-quote-style = 'single'
+
+[schema]
+strict = false

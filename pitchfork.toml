@@ -1,0 +1,37 @@
+[daemons.glance-scrapper]
+dir = '.'
+ready_cmd = 'podman healthcheck run glance-scrapper'
+run = '''
+nu -c '
+podman run --replace --name glance-scrapper --network glance-net --network-alias glance-scrapper --stop-timeout 40 --health-cmd "bun src/healthcheck.ts" --health-interval 30s --health-timeout 5s --health-retries 3 --health-start-period 60s -p 127.0.0.1:3030:3000 -v $"($env.PWD)/fnox.scrapper.toml:/app/fnox.toml:ro,Z" --secret glance-proton-pass-pat,type=env,target=PROTON_PASS_PERSONAL_ACCESS_TOKEN localhost/glance-scrapper:latest
+'
+'''
+
+[daemons.glance-app]
+depends = ['glance-scrapper']
+dir = '.'
+ready_cmd = 'podman exec glance-app wget -q -O /dev/null http://127.0.0.1:8080/'
+run = '''
+nu -c '
+podman run --replace --name glance-app --network glance-net -p 127.0.0.1:8080:8080 -v $"($env.PWD)/config:/app/config:Z" localhost/glance-app:latest
+'
+'''
+
+[daemons.glance-test-scrapper]
+dir = '.'
+ready_cmd = 'podman healthcheck run glance-test-scrapper'
+run = '''
+nu -c '
+podman run --replace --name glance-test-scrapper --network glance-test-net --network-alias glance-scrapper --stop-timeout 40 --health-cmd "bun src/healthcheck.ts" --health-interval 30s --health-timeout 5s --health-retries 3 --health-start-period 60s -p 127.0.0.1:3031:3000 -v $"($env.PWD)/fnox.scrapper.toml:/app/fnox.toml:ro,Z" --secret glance-test-proton-pass-pat,type=env,target=PROTON_PASS_PERSONAL_ACCESS_TOKEN localhost/glance-scrapper:test
+'
+'''
+
+[daemons.glance-test-app]
+depends = ['glance-test-scrapper']
+dir = '.'
+ready_cmd = 'podman exec glance-test-app wget -q -O /dev/null http://127.0.0.1:8080/'
+run = '''
+nu -c '
+podman run --replace --name glance-test-app --network glance-test-net -p 127.0.0.1:8081:8080 -v $"($env.PWD)/config:/app/config:Z" localhost/glance-app:test
+'
+'''

@@ -1,0 +1,82 @@
+amends "package://github.com/jdx/hk/releases/download/v2.3.1/hk@2.3.1#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.3.1/hk@2.3.1#/Builtins.pkl"
+
+local linters = new Mapping<String, Step> {
+    ["actionlint"] = Builtins.actionlint
+    ["byte-order-marker"] = Builtins.byte_order_marker
+    ["check-executables-have-shebangs"] = Builtins.check_executables_have_shebangs
+    ["check-merge-conflict"] = Builtins.check_merge_conflict
+    ["hadolint"] = (Builtins.hadolint) {
+        glob = List("Containerfile*", ".devcontainer/Containerfile*")
+    }
+    ["markdownlint"] {
+        glob = List("**/*.md", "**/*.markdown")
+        check = "markdownlint-cli2 {{files}}"
+        fix = "markdownlint-cli2 --fix {{files}}"
+    }
+    ["newlines"] = Builtins.newlines
+    ["oxlint"] = Builtins.ox_lint
+    ["oxfmt"] = (Builtins.oxfmt) {
+        glob = List(
+            "**/*.js",
+            "**/*.mjs",
+            "**/*.cjs",
+            "**/*.ts",
+            "**/*.mts",
+            "**/*.cts",
+            "**/*.jsx",
+            "**/*.tsx",
+            "**/*.json",
+            "**/*.jsonc"
+        )
+    }
+    ["pkl"] = Builtins.pkl
+    ["tombi"] = (Builtins.tombi) {
+        exclude = List(".miserc.toml")
+    }
+    ["tombi-format"] = (Builtins.tombi_format) {
+        exclude = List(".miserc.toml")
+    }
+    ["trailing-whitespace"] = Builtins.trailing_whitespace
+    ["typos"] = Builtins.typos
+    ["yamllint"] = Builtins.yamllint
+    ["zizmor"] = (Builtins.zizmor) {
+        check = "sh -c 'if [ -n \"${GH_TOKEN:-${GITHUB_TOKEN:-}}\" ]; then exec zizmor --no-progress \"$@\"; elif command -v fnox >/dev/null 2>&1; then exec fnox exec -P github -- zizmor --no-progress \"$@\"; else exec zizmor --no-progress \"$@\"; fi' -- {{files}}"
+        check_diff = null
+        check_after_diff = false
+        fix = "sh -c 'if [ -n \"${GH_TOKEN:-${GITHUB_TOKEN:-}}\" ]; then exec zizmor --no-progress --fix \"$@\"; elif command -v fnox >/dev/null 2>&1; then exec fnox exec -P github -- zizmor --no-progress --fix \"$@\"; else exec zizmor --no-progress --fix \"$@\"; fi' -- {{files}}"
+    }
+    ["nu-check"] {
+        glob = List("*.nu", "config/*.nu")
+        check = "nu --commands 'open {{files}} | nu-check'"
+    }
+    ["mise-lock"] {
+        glob = List(".miserc.toml", ".mise/**/*.toml", ".mise/**/*.lock")
+        check = "nu -c 'mise lock; git diff --exit-code -- .mise/*.lock'"
+        fix = "mise lock"
+    }
+    ["renovate-config-validator"] {
+        glob = List("renovate.json", ".github/renovate.json")
+        check = "renovate-config-validator --strict {{files}}"
+    }
+}
+
+hooks {
+    ["pre-commit"] {
+        steps = linters
+    }
+    ["commit-msg"] {
+        steps {
+            ["commitlint"] {
+                check = "commitlint --edit"
+            }
+        }
+    }
+    ["fix"] {
+        fix = true
+        steps = linters
+    }
+    ["check"] {
+        steps = linters
+    }
+}

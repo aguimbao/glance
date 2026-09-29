@@ -1,0 +1,538 @@
+# Glance config.
+# Docs:     https://github.com/glanceapp/glance/blob/main/docs/configuration.md
+# Template: https://github.com/glanceapp/glance/blob/main/docs/glance.yml
+#
+# "Changelog" page with two sections fed by the scrapper service:
+#   - New versions  : GitHub releases/tags from repos starred by GITHUB_USERS_WITH_STARS,
+#                     plus new versions of the specific Play Store apps in PLAYSTORE_APP_IDS,
+#                     and Firefox AMO addons in FIREFOX_APP_IDS (one group per source).
+#   - New releases  : newly published apps from the Play Store developers in PLAYSTORE_DEV_IDS,
+#                     and newly published Firefox AMO addons from FIREFOX_DEV_IDS (author usernames).
+#
+# Each widget has a toolbar with window toggles (1d / 7d / 30d / 1y) and a "Refresh now"
+# button. The buttons fire fetch() to http://127.0.0.1:3030 (the scraper, published
+# to loopback). `cache: 5s` makes Glance re-pull within ~5s
+# so the toggle / refresh takes effect quickly.
+#
+# Note: CSS is in a <style> block (not inline style="...") because Go's html/template
+# escaper rejects pipeline values containing var(--...) parens in style attributes.
+#
+# Enable sources: set GITHUB_USERS_WITH_STARS (your username(s)) + GITHUB_TOKEN (a GitHub PAT),
+# and/or any of PLAYSTORE_APP_IDS / PLAYSTORE_DEV_IDS / FIREFOX_APP_IDS / FIREFOX_DEV_IDS
+# for the scrapper service.
+
+theme:
+  background-color: 240 13 14
+  primary-color: 51 33 68
+  negative-color: 358 100 68
+  contrast-multiplier: 1.2
+
+branding:
+  hide-footer: true
+
+pages:
+  - name: Home
+    columns:
+      - size: small
+        widgets:
+          # @CLOCK_START@
+          - type: clock
+            hour-format: 24h
+            timezones:
+              - timezone: "America/Lima"
+                label: "Lima"
+              - timezone: "America/Asuncion"
+                label: "Asunción"
+              - timezone: "Europe/Madrid"
+                label: "Zaragoza"
+          # @CLOCK_END@
+          - type: calendar
+            first-day-of-week: monday
+      - size: full
+        widgets:
+          - type: markets
+            markets:
+              - symbol: GC=F
+                name: Gold/USD
+              - symbol: SI=F
+                name: Silver/USD
+              - symbol: BTC-USD
+                name: Bitcoin
+              - symbol: ^GSPC
+                name: S&P 500
+              - symbol: ^IXIC
+                name: Nasdaq
+              - symbol: ^GDAXI
+                name: DAX (Germany)
+              - symbol: ^N225
+                name: Nikkei 225 (Japan)
+              - symbol: USDEUR=X
+                name: USD/EUR
+              - symbol: CNYUSD=X
+                name: Yuan/USD
+              - symbol: USDPYG=X
+                name: USD/PYG
+      - size: small
+        widgets:
+          # @WEATHER_START@
+          - type: weather
+            location: "Lima, Peru"
+            units: metric
+            hour-format: 24h
+          - type: weather
+            location: "Asunción, Paraguay"
+            units: metric
+            hour-format: 24h
+          - type: weather
+            location: "Zaragoza, Spain"
+            units: metric
+            hour-format: 24h
+            # @WEATHER_END@
+
+  - name: RSS
+    columns:
+      - size: full
+        widgets:
+          - type: custom-api
+            title: RSS Feeds
+            url: http://glance-scrapper:3000/rss
+            cache: 1s
+            template: |
+              <style>
+                .rss-btn{padding:2px 12px;font-size:.85em;border:1px solid var(--color-separator);border-radius:var(--border-radius);cursor:pointer;background:transparent;color:var(--color-text-subdue)}
+                .rss-btn.rss-on{border-color:var(--color-primary);background:var(--color-primary);color:var(--color-background)}
+                .rss-btn:hover:not(.rss-on){border-color:var(--color-primary);color:var(--color-primary)}
+                .rss-fp{margin-bottom:10px}
+                .rss-frow{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+                .rss-flabel{font-size:.7em;text-transform:uppercase;letter-spacing:.04em;color:var(--color-text-subdue);width:100%;margin-bottom:2px}
+                .rss-tb{display:flex;gap:5px;margin-bottom:10px;align-items:center}
+                .rss-spacer{flex:1}
+                .rss-more{display:block;margin:10px auto;padding:4px 16px;font:inherit;font-size:.85em;border:1px solid var(--color-separator);border-radius:var(--border-radius);background:transparent;color:var(--color-text-subdue);cursor:pointer}
+                .rss-more:hover{border-color:var(--color-primary);color:var(--color-primary)}
+                .rss-item.rss-hide{display:none}
+                .rss-check{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:.85em;color:var(--color-text-subdue);cursor:pointer}
+                .rss-check input{margin:0;cursor:pointer}
+              </style>
+              {{ if eq .Response.StatusCode 200 }}
+                <div class="rss-tb">
+                  <button class="rss-btn" onclick="fetch('http://127.0.0.1:3030/rss/filter-toggle').then(()=>setTimeout(()=>location.reload(),500))">{{ if .JSON.Bool "filterOpen" }}▾ Filters{{ else }}▸ Filters{{ end }}{{ if not (.JSON.Bool "selectedAll") }} <span class="color-primary">●</span>{{ end }}</button>
+                  <div class="rss-spacer"></div>
+                  <button class="rss-btn" onclick="fetch('http://127.0.0.1:3030/refreshnow').then(()=>setTimeout(()=>location.reload(),1000))">↻ Refresh</button>
+                </div>
+                <div class="rss-fp" style="display:{{ if .JSON.Bool "filterOpen" }}block{{ else }}none{{ end }}">
+                  <div class="rss-frow">
+                    <button class="rss-btn {{ if .JSON.Bool "selectedAll" }}rss-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/rss/filter-all').then(()=>setTimeout(()=>location.reload(),500))">All</button>
+                  </div>
+                  {{ if gt (len (.JSON.Array "feeds")) 0 }}
+                  <div class="rss-frow">
+                    <span class="rss-flabel">Feeds</span>
+                    {{ range .JSON.Array "feeds" }}
+                    <button class="rss-btn {{ if .Bool "selected" }}rss-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/rss/filter-feed?value='+encodeURIComponent('{{ .String "name" }}')).then(()=>setTimeout(()=>location.reload(),500))">{{ .String "name" }}</button>
+                    {{ end }}
+                  </div>
+                  {{ end }}
+                  {{ if gt (len (.JSON.Array "tags")) 0 }}
+                  <div class="rss-frow">
+                    <span class="rss-flabel">Tags</span>
+                    {{ range .JSON.Array "tags" }}
+                    <button class="rss-btn {{ if .Bool "selected" }}rss-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/rss/filter-tag?value='+encodeURIComponent('{{ .String "name" }}')).then(()=>setTimeout(()=>location.reload(),500))">{{ .String "name" }}</button>
+                    {{ end }}
+                  </div>
+                  {{ end }}
+                  <label class="rss-check"><input type="checkbox" {{ if .JSON.Bool "includeUntagged" }}checked{{ end }} onclick="fetch('http://127.0.0.1:3030/rss/filter-untagged').then(()=>setTimeout(()=>location.reload(),500))"> Include untagged items</label>
+                </div>
+                <div class="color-subdue size-h6 margin-bottom-10">{{ .JSON.Int "count" }} items</div>
+                {{ if eq (.JSON.Int "count") 0 }}
+                  <p class="color-subdue">No items match the current filters.</p>
+                {{ else }}
+                  <ul class="list list-gap-15">
+                    {{ range $i, $it := .JSON.Array "items" }}
+                    <li class="rss-item flex gap-10 items-center{{ if ge $i 25 }} rss-hide{{ end }}">
+                      <div class="flex-1">
+                        <a class="size-h4 color-primary-if-not-visited" href="{{ $it.String "link" }}" target="_blank" rel="noreferrer">{{ $it.String "title" }}</a>
+                        <div class="color-subdue size-h6">{{ $it.String "feedName" }}{{ if $it.String "tagsLabel" }} · {{ $it.String "tagsLabel" }}{{ end }}</div>
+                      </div>
+                      <span {{ $it.String "publishedAt" | parseTime "rfc3339" | toRelativeTime }} class="color-subdue size-h6" style="white-space:nowrap"></span>
+                    </li>
+                    {{ end }}
+                  </ul>
+                  {{ if gt (len (.JSON.Array "items")) 25 }}
+                    <button class="rss-more" onclick="document.querySelectorAll('.rss-item.rss-hide').forEach(e=>e.classList.remove('rss-hide'));this.style.display='none'">Show more</button>
+                  {{ end }}
+                {{ end }}
+                <div class="color-subdue size-h6 margin-top-10">
+                  Updated <span {{ .JSON.String "fetchedAt" | parseTime "rfc3339" | toRelativeTime }}></span>
+                </div>
+              {{ else }}
+                <p class="color-negative">Fetch failed: {{ .Response.Status }}</p>
+              {{ end }}
+
+  - name: News
+    columns:
+      - size: full
+        widgets:
+          - type: custom-api
+            title: Kagi News
+            url: http://glance-scrapper:3000/kagi
+            cache: 1s
+            template: |
+              <style>
+                .cat-toggle{width:100%;text-align:left;background:transparent;border:0;cursor:pointer;color:var(--color-text-base);font:inherit;text-transform:uppercase;font-size:var(--font-size-h4);padding:var(--widget-content-vertical-padding) 0}
+                .cat-toggle::before{content:'▸ ';display:inline-block;transition:transform .2s}
+                .cat-toggle.cl-expanded::before{content:'▾ '}
+                .cl-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+                .cl-tabs:not(.cl-expanded) .cl-tab{display:none}
+                .cl-tab{padding:3px 10px;font-size:.85em;border:1px solid var(--color-separator);border-radius:var(--border-radius);cursor:pointer;background:transparent;color:var(--color-text-subdue)}
+                .cl-tab.cl-on{border-color:var(--color-primary);background:var(--color-primary);color:var(--color-background)}
+                .cl-refresh{font:inherit;font-size:.8em;border:1px solid var(--color-separator);border-radius:var(--border-radius);background:transparent;color:var(--color-text-subdue);cursor:pointer;padding:2px 8px;white-space:nowrap}
+                .cl-refresh:hover{border-color:var(--color-primary);color:var(--color-primary)}
+              </style>
+              {{ if eq .Response.StatusCode 200 }}
+                {{ $active := .JSON.String "activeCategory" }}
+                <div class="flex justify-between items-center">
+                  <button class="cat-toggle" onclick="const t=this,s=t.parentElement.nextElementSibling;t.classList.toggle('cl-expanded');s.classList.toggle('cl-expanded')">Categories</button>
+                  {{ if $active }}
+                    <button class="cl-refresh" onclick="fetch('http://127.0.0.1:3030/kagi/refresh').then(()=>setTimeout(()=>location.reload(),800))">↻ Refresh</button>
+                  {{ end }}
+                </div>
+                <div class="cl-tabs{{ if $active }}{{ end }}">
+                  {{ range .JSON.Array "categories" }}
+                    <button class="cl-tab {{ if eq (.String "slug") $active }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/kagi/select?cat=' + encodeURIComponent('{{ .String "slug" }}')).then(()=>setTimeout(()=>location.reload(),500))">{{ .String "name" }}</button>
+                  {{ end }}
+                </div>
+                {{ $cat := .JSON.String "categoryName" }}
+                {{ if $active }}
+                  {{ if eq (.JSON.Int "count") 0 }}
+                    <p class="color-subdue">No stories in {{ $cat }} right now.</p>
+                  {{ else }}
+                    <div class="size-h5 color-subdue margin-bottom-5">{{ $cat }}</div>
+                    <ul class="list list-gap-15">
+                      {{ range .JSON.Array "stories" }}
+                        <li class="flex gap-10 items-start">
+                          {{ if .String "image" }}
+                            <div class="thumbnail-container thumbnail-parent">
+                              <img class="thumbnail" src="{{ .String "image" }}" width="60" height="60" loading="lazy">
+                            </div>
+                          {{ end }}
+                          <div class="flex-1">
+                            <div class="flex justify-between items-center">
+                              <a class="size-h4 color-primary-if-not-visited" href="{{ .String "url" }}" target="_blank" rel="noreferrer">{{ .String "title" }}</a>
+                            </div>
+                            {{ if .String "summary" }}
+                              <div class="color-subdue margin-top-3">{{ .String "summary" }}</div>
+                            {{ end }}
+                          </div>
+                        </li>
+                      {{ end }}
+                    </ul>
+                  {{ end }}
+                  <div class="color-subdue size-h6 margin-top-10">
+                    Updated <span {{ .JSON.String "fetchedAt" | parseTime "rfc3339" | toRelativeTime }}></span>
+                  </div>
+                {{ else }}
+                  <p class="color-subdue margin-top-5">Select a category above to see the latest stories.</p>
+                {{ end }}
+              {{ else }}
+                <p class="color-negative">Fetch failed: {{ .Response.Status }}</p>
+              {{ end }}
+      - size: full
+        widgets:
+          - type: group
+            widgets:
+              - type: hacker-news
+                limit: 50
+                collapse-after: 30
+                sort-by: top
+              - type: lobsters
+                limit: 50
+                collapse-after: 30
+                sort-by: hot
+
+  - name: Calendar
+    columns:
+      - size: full
+        widgets:
+          - type: custom-api
+            title: Upcoming Events
+            url: http://glance-scrapper:3000/calendar
+            cache: 1s
+            template: |
+              <style>
+                .cal-toolbar{display:flex;gap:5px;margin-bottom:10px;align-items:center}
+                .cl-btn{padding:2px 12px;font-size:.85em;border:1px solid var(--color-separator);border-radius:var(--border-radius);cursor:pointer;background:transparent;color:var(--color-text-subdue)}
+                .cl-btn.cl-on{border-color:var(--color-primary);background:var(--color-primary);color:var(--color-background)}
+                .cl-btn:hover:not(.cl-on){border-color:var(--color-primary);color:var(--color-primary)}
+                .cl-spacer{flex:1}
+                .cal-filter-toggle{margin-bottom:8px}
+                .cal-filter-group{margin-bottom:4px}
+                .cal-filter-row{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:2px}
+                .cal-filter-sub{padding-left:16px}
+                .cal-quick{display:flex;gap:5px;margin-bottom:8px}
+                .cal-nav{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+                .cal-nav-btn{font:inherit;font-size:1.1em;background:transparent;border:1px solid var(--color-separator);border-radius:var(--border-radius);cursor:pointer;color:var(--color-text-subdue);padding:2px 14px;line-height:1}
+                .cal-nav-btn:hover{border-color:var(--color-primary);color:var(--color-primary)}
+                .cal-period{flex:1;text-align:center;font-size:1.05em;color:var(--color-text-base)}
+                .cal-menu{margin:0 0 12px;padding:12px;border:1px solid var(--color-separator);border-radius:var(--border-radius)}
+                .cal-menu-ynav{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+                .cal-menu-ylabel{flex:1;text-align:center;font-weight:bold;color:var(--color-text-base);font-size:1em}
+                .cal-menu-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+                .cal-mbtn{padding:5px 4px;border:1px solid var(--color-separator);border-radius:var(--border-radius);background:transparent;color:var(--color-text-base);cursor:pointer;font-size:.9em;text-align:center}
+                .cal-mbtn:hover{border-color:var(--color-primary);color:var(--color-primary)}
+                .cal-menu-weeks{margin-top:8px;max-height:160px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+                .cal-menu-wbtn{padding:5px 8px;border:1px solid var(--color-separator);border-radius:var(--border-radius);background:transparent;color:var(--color-text-base);cursor:pointer;font-size:.85em;text-align:left}
+                .cal-menu-wbtn:hover{border-color:var(--color-primary);color:var(--color-primary)}
+                .cal-mbtn-on{border-color:var(--color-primary);background:var(--color-primary);color:var(--color-background)}
+                .cal-menu-date{width:auto;min-width:200px;display:block;margin:0 auto 8px;padding:6px 8px;border:1px solid var(--color-separator);border-radius:var(--border-radius);background:transparent;color:var(--color-text-base);font:inherit;font-size:.95em;margin-bottom:8px}
+                .cal-menu-date:focus{border-color:var(--color-primary);outline:none}
+                .cal-group+.cal-group{border-top:1px solid var(--color-separator);padding-top:10px;margin-top:5px}
+              </style>
+              {{ if eq .Response.StatusCode 200 }}
+                {{ $mode := .JSON.String "mode" }}
+                {{ $menuYear := .JSON.String "menuYear" }}
+                {{ $autoMonth := .JSON.Int "menuAutoMonth" }}
+                {{ $periodDate := .JSON.String "periodDate" }}
+                {{ $selMonth := .JSON.Int "selectedMonth" }}
+                {{ $selYear := .JSON.Int "selectedYear" }}
+                {{ $menuYearInt := .JSON.Int "menuYear" }}
+                {{ $selYearStr := .JSON.String "selectedYear" }}
+                {{ $selectedAll := .JSON.Bool "selectedAll" }}
+                <button class="cl-btn cal-filter-toggle" onclick="fetch('http://127.0.0.1:3030/calendar/filter-toggle').then(()=>setTimeout(()=>location.reload(),500))">{{ if .JSON.Bool "filterOpen" }}▾ Filters{{ else }}▸ Filters{{ end }}{{ if not $selectedAll }} <span class="color-primary">●</span>{{ end }}</button>
+                <div id="cal-fp" style="display:{{ if .JSON.Bool "filterOpen" }}block{{ else }}none{{ end }};margin-bottom:10px">
+                  <div class="cal-filter-row">
+                    <button class="cl-btn {{ if $selectedAll }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/filter-all').then(()=>setTimeout(()=>location.reload(),500))">All</button>
+                  </div>
+                  <div class="cal-filter-sub">
+                  {{ range .JSON.Array "filterGroups" }}
+                  <div class="cal-filter-group">
+                    <div class="cal-filter-row">
+                      <button class="cl-btn {{ if .Bool "selected" }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/filter-group?value='+encodeURIComponent('{{ .String "value" }}')).then(()=>setTimeout(()=>location.reload(),500))">{{ .String "label" }}</button>
+                    </div>
+                    <div class="cal-filter-row cal-filter-sub">
+                      {{ range .Array "calendars" }}
+                      <button class="cl-btn {{ if .Bool "selected" }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/filter?value='+encodeURIComponent('{{ .String "value" }}')).then(()=>setTimeout(()=>location.reload(),500))">{{ .String "label" }}</button>
+                      {{ end }}
+                    </div>
+                  </div>
+                  {{ end }}
+                  </div>
+                </div>
+                <div class="cal-toolbar">
+                  <button class="cl-btn {{ if eq $mode "day" }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/select?mode=day').then(()=>setTimeout(()=>location.reload(),500))">Day</button>
+                  <button class="cl-btn {{ if eq $mode "week" }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/select?mode=week').then(()=>setTimeout(()=>location.reload(),500))">Week</button>
+                  <button class="cl-btn {{ if eq $mode "month" }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/select?mode=month').then(()=>setTimeout(()=>location.reload(),500))">Month</button>
+                  <button class="cl-btn {{ if eq $mode "year" }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/select?mode=year').then(()=>setTimeout(()=>location.reload(),500))">Year</button>
+                  <div class="cl-spacer"></div>
+                  <button class="cl-btn" onclick="fetch('http://127.0.0.1:3030/refreshnow').then(()=>setTimeout(()=>location.reload(),1000))">↻ Refresh</button>
+                </div>
+                <div class="cal-quick">
+                  {{ if eq $mode "day" }}
+                    <button class="cl-btn {{ if eq $periodDate (.JSON.String "qToday") }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/goto?date={{ .JSON.String "qToday" }}').then(()=>setTimeout(()=>location.reload(),500))">Today</button>
+                    <button class="cl-btn {{ if eq $periodDate (.JSON.String "qTomorrow") }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/goto?date={{ .JSON.String "qTomorrow" }}').then(()=>setTimeout(()=>location.reload(),500))">Tomorrow</button>
+                  {{ else if eq $mode "week" }}
+                    <button class="cl-btn {{ if eq $periodDate (.JSON.String "qThisWeek") }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/goto?date={{ .JSON.String "qThisWeek" }}').then(()=>setTimeout(()=>location.reload(),500))">This week</button>
+                    <button class="cl-btn {{ if eq $periodDate (.JSON.String "qNextWeek") }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/goto?date={{ .JSON.String "qNextWeek" }}').then(()=>setTimeout(()=>location.reload(),500))">Next week</button>
+                  {{ else if eq $mode "month" }}
+                    <button class="cl-btn {{ if eq $periodDate (.JSON.String "qThisMonth") }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/goto?date={{ .JSON.String "qThisMonth" }}').then(()=>setTimeout(()=>location.reload(),500))">This month</button>
+                    <button class="cl-btn {{ if eq $periodDate (.JSON.String "qNextMonth") }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/goto?date={{ .JSON.String "qNextMonth" }}').then(()=>setTimeout(()=>location.reload(),500))">Next month</button>
+                  {{ else if eq $mode "year" }}
+                    <button class="cl-btn {{ if eq $periodDate (.JSON.String "qThisYear") }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/goto?date={{ .JSON.String "qThisYear" }}').then(()=>setTimeout(()=>location.reload(),500))">This year</button>
+                    <button class="cl-btn {{ if eq $periodDate (.JSON.String "qNextYear") }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/goto?date={{ .JSON.String "qNextYear" }}').then(()=>setTimeout(()=>location.reload(),500))">Next year</button>
+                  {{ end }}
+                </div>
+                <div class="cal-nav">
+                  <button class="cal-nav-btn" onclick="fetch('http://127.0.0.1:3030/calendar/prev').then(()=>setTimeout(()=>location.reload(),500))">‹</button>
+                  <span class="cal-period">{{ .JSON.String "periodLabel" }}</span>
+                  <button class="cal-nav-btn" onclick="fetch('http://127.0.0.1:3030/calendar/next').then(()=>setTimeout(()=>location.reload(),500))">›</button>
+                </div>
+                <div class="cal-menu">
+                  {{ if eq $mode "day" }}
+                    <input type="date" class="cal-menu-date" value="{{ .JSON.String "periodDate" }}" onchange="fetch('http://127.0.0.1:3030/calendar/goto?date='+this.value).then(()=>setTimeout(()=>location.reload(),500))">
+                  {{ else if eq $mode "year" }}
+                    <div class="cal-menu-ynav">
+                      <button class="cal-nav-btn" onclick="fetch('http://127.0.0.1:3030/calendar/menu-year?dir=prev&step=20').then(()=>setTimeout(()=>location.reload(),500))">‹</button>
+                      <span class="cal-menu-ylabel">{{ .JSON.String "menuRangeLabel" }}</span>
+                      <button class="cal-nav-btn" onclick="fetch('http://127.0.0.1:3030/calendar/menu-year?dir=next&step=20').then(()=>setTimeout(()=>location.reload(),500))">›</button>
+                    </div>
+                    <div class="cal-menu-grid">
+                      {{ range .JSON.Array "menuYears" }}
+                      <button class="cal-mbtn {{ if eq (.String "year") $selYearStr }}cal-mbtn-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/goto?date={{ .String "date" }}').then(()=>setTimeout(()=>location.reload(),500))">{{ .String "year" }}</button>
+                      {{ end }}
+                    </div>
+                  {{ else if eq $mode "month" }}
+                    <div class="cal-menu-ynav">
+                      <button class="cal-nav-btn" onclick="fetch('http://127.0.0.1:3030/calendar/menu-year?dir=prev').then(()=>setTimeout(()=>location.reload(),500))">‹</button>
+                      <span class="cal-menu-ylabel">{{ $menuYear }}</span>
+                      <button class="cal-nav-btn" onclick="fetch('http://127.0.0.1:3030/calendar/menu-year?dir=next').then(()=>setTimeout(()=>location.reload(),500))">›</button>
+                    </div>
+                    <div class="cal-menu-grid">
+                      {{ range .JSON.Array "menuMonths" }}
+                      <button class="cal-mbtn {{ if and (eq $selMonth (.Int "value")) (eq $selYear $menuYearInt) }}cal-mbtn-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/goto?date={{ .String "date" }}').then(()=>setTimeout(()=>location.reload(),500))">{{ .String "label" }}</button>
+                      {{ end }}
+                    </div>
+                  {{ else if eq $mode "week" }}
+                    <div class="cal-menu-ynav">
+                      <button class="cal-nav-btn" onclick="fetch('http://127.0.0.1:3030/calendar/menu-year?dir=prev').then(()=>setTimeout(()=>location.reload(),500))">‹</button>
+                      <span class="cal-menu-ylabel">{{ $menuYear }}</span>
+                      <button class="cal-nav-btn" onclick="fetch('http://127.0.0.1:3030/calendar/menu-year?dir=next').then(()=>setTimeout(()=>location.reload(),500))">›</button>
+                    </div>
+                    <div class="cal-menu-grid">
+                      {{ range .JSON.Array "menuMonths" }}
+                      <button class="cal-mbtn {{ if eq $autoMonth (.Int "value") }}cal-mbtn-on{{ end }}" onclick="document.querySelectorAll('.cal-menu-weeks').forEach(e=>e.style.display='none');document.getElementById('cal-w{{ .Int "value" }}').style.display='block';document.querySelectorAll('.cal-mbtn').forEach(e=>e.classList.remove('cal-mbtn-on'));this.classList.add('cal-mbtn-on')">{{ .String "label" }}</button>
+                      {{ end }}
+                    </div>
+                    {{ range .JSON.Array "menuMonths" }}
+                    <div class="cal-menu-weeks" id="cal-w{{ .Int "value" }}" style="display:{{ if eq $autoMonth (.Int "value") }}block{{ else }}none{{ end }}">
+                      {{ range .Array "weeks" }}
+                      <button class="cal-menu-wbtn {{ if eq (.String "date") $periodDate }}cal-mbtn-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/calendar/goto?date={{ .String "date" }}').then(()=>setTimeout(()=>location.reload(),500))">{{ .String "label" }}</button>
+                      {{ end }}
+                    </div>
+                    {{ end }}
+                  {{ end }}
+                </div>
+                {{ if eq (.JSON.Int "count") 0 }}
+                  <p class="color-subdue">No events for this {{ $mode }}.</p>
+                {{ else }}
+                  {{ range .JSON.Array "dayGroups" }}
+                    <div class="cal-group">
+                      <div class="text-center size-h5 color-subdue">{{ .String "dateLabel" }} <span class="size-h6">| {{ .String "daysLabel" }}</span></div>
+                      <ul class="list list-gap-15">
+                        {{ range .Array "events" }}
+                          <li class="flex gap-10 items-center">
+                            <div class="flex-1">
+                              <div class="size-h4">{{ .String "title" }}</div>
+                              <div class="color-subdue size-h6">{{ .String "group" }} · {{ .String "calendar" }}{{ if .String "location" }} · {{ .String "location" }}{{ end }}</div>
+                            </div>
+                            <div class="color-subdue size-h6" style="white-space:nowrap">
+                              {{ .String "timeLabel" }}
+                            </div>
+                          </li>
+                        {{ end }}
+                      </ul>
+                    </div>
+                    {{ end }}
+                {{ end }}
+                <div class="color-subdue size-h6 margin-top-10">
+                  Updated <span {{ .JSON.String "fetchedAt" | parseTime "rfc3339" | toRelativeTime }}></span>
+                </div>
+              {{ else }}
+                <p class="color-negative">Fetch failed: {{ .Response.Status }}</p>
+              {{ end }}
+
+  - name: Changelog
+    columns:
+      - size: full
+        widgets:
+          - type: custom-api
+            title: New versions
+            url: http://glance-scrapper:3000/changelog
+            cache: 1s
+            template: |
+              <style>
+                .cl-toolbar{display:flex;gap:5px;margin-bottom:10px;align-items:center}
+                .cl-btn{padding:2px 12px;font-size:.85em;border:1px solid var(--color-separator);border-radius:var(--border-radius);cursor:pointer;background:transparent;color:var(--color-text-subdue)}
+                .cl-btn.cl-on{border-color:var(--color-primary);background:var(--color-primary);color:var(--color-background)}
+                .cl-btn:hover:not(.cl-on){border-color:var(--color-primary);color:var(--color-primary)}
+                .cl-spacer{flex:1}
+              </style>
+              {{ if eq .Response.StatusCode 200 }}
+                {{ $w := .JSON.Int "currentWindow" }}
+                <div class="cl-toolbar">
+                  <button class="cl-btn {{ if eq $w 0 }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/window?source=gh&days=0').then(()=>setTimeout(()=>location.reload(),1000))">Today</button>
+                  <button class="cl-btn {{ if eq $w 1 }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/window?source=gh&days=1').then(()=>setTimeout(()=>location.reload(),1000))">1d</button>
+                  <button class="cl-btn {{ if eq $w 7 }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/window?source=gh&days=7').then(()=>setTimeout(()=>location.reload(),1000))">7d</button>
+                  <button class="cl-btn {{ if eq $w 30 }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/window?source=gh&days=30').then(()=>setTimeout(()=>location.reload(),1000))">30d</button>
+                  <button class="cl-btn {{ if eq $w 365 }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/window?source=gh&days=365').then(()=>setTimeout(()=>location.reload(),1000))">1y</button>
+                  <div class="cl-spacer"></div>
+                  <button class="cl-btn" onclick="fetch('http://127.0.0.1:3030/refreshnow').then(()=>setTimeout(()=>location.reload(),1000))">↻ Refresh</button>
+                </div>
+                {{ if and (eq (len (.JSON.Array "users")) 0) (eq (len (.JSON.Array "appIds")) 0) }}
+                  <p class="color-subdue">Set <b>GITHUB_USERS_WITH_STARS</b> (+ <b>GITHUB_TOKEN</b>) and/or <b>PLAYSTORE_APP_IDS</b> / <b>FIREFOX_APP_IDS</b> for the scrapper service, then restart it.</p>
+                {{ else if eq (.JSON.Int "count") 0 }}
+                  <p class="color-subdue">No new versions {{ if eq $w 0 }}today{{ else }}in the last {{ .JSON.String "windowDays" }} days{{ end }}.</p>
+                {{ else }}
+                  {{ range .JSON.Array "groups" }}
+                    <div class="size-h5 color-subdue margin-top-10 margin-bottom-5">{{ .String "label" }}</div>
+                    <ul class="list list-gap-15">
+                      {{ range .Array "releases" }}
+                        <li class="flex gap-10 items-start">
+                          {{ if .String "icon" }}
+                            <div class="thumbnail-container thumbnail-parent">
+                              <img class="thumbnail" src="{{ .String "icon" }}" width="40" height="40" loading="lazy">
+                            </div>
+                          {{ end }}
+                          <div class="flex-1">
+                            <div class="flex justify-between items-center">
+                              <a class="size-h4 color-primary-if-not-visited" href="{{ .String "url" }}" target="_blank" rel="noreferrer">{{ .String "repo" }} · {{ .String "tagName" }}</a>
+                              <span {{ .String "publishedAt" | parseTime "rfc3339" | toRelativeTime }} class="color-subdue size-h6"></span>
+                            </div>
+                            {{ if .String "name" }}<div class="size-h6">{{ .String "name" }}</div>{{ end }}
+                            {{ if .String "description" }}
+                              <div class="color-subdue margin-top-3">{{ .String "description" }}</div>
+                            {{ end }}
+                          </div>
+                        </li>
+                      {{ end }}
+                    </ul>
+                  {{ end }}
+                {{ end }}
+                <div class="color-subdue size-h6 margin-top-10">
+                  Updated <span {{ .JSON.String "fetchedAt" | parseTime "rfc3339" | toRelativeTime }}></span>
+                </div>
+              {{ else }}
+                <p class="color-negative">Fetch failed: {{ .Response.Status }}</p>
+              {{ end }}
+
+          - type: custom-api
+            title: New releases
+            url: http://glance-scrapper:3000/releases
+            cache: 1s
+            template: |
+              <style>
+                .cl-toolbar{display:flex;gap:5px;margin-bottom:10px;align-items:center}
+                .cl-btn{padding:2px 12px;font-size:.85em;border:1px solid var(--color-separator);border-radius:var(--border-radius);cursor:pointer;background:transparent;color:var(--color-text-subdue)}
+                .cl-btn.cl-on{border-color:var(--color-primary);background:var(--color-primary);color:var(--color-background)}
+                .cl-btn:hover:not(.cl-on){border-color:var(--color-primary);color:var(--color-primary)}
+                .cl-spacer{flex:1}
+              </style>
+              {{ if eq .Response.StatusCode 200 }}
+                {{ $w := .JSON.Int "currentWindow" }}
+                <div class="cl-toolbar">
+                  <button class="cl-btn {{ if eq $w 0 }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/window?source=ps&days=0').then(()=>setTimeout(()=>location.reload(),1000))">Today</button>
+                  <button class="cl-btn {{ if eq $w 1 }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/window?source=ps&days=1').then(()=>setTimeout(()=>location.reload(),1000))">1d</button>
+                  <button class="cl-btn {{ if eq $w 7 }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/window?source=ps&days=7').then(()=>setTimeout(()=>location.reload(),1000))">7d</button>
+                  <button class="cl-btn {{ if eq $w 30 }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/window?source=ps&days=30').then(()=>setTimeout(()=>location.reload(),1000))">30d</button>
+                  <button class="cl-btn {{ if eq $w 365 }}cl-on{{ end }}" onclick="fetch('http://127.0.0.1:3030/window?source=ps&days=365').then(()=>setTimeout(()=>location.reload(),1000))">1y</button>
+                  <div class="cl-spacer"></div>
+                  <button class="cl-btn" onclick="fetch('http://127.0.0.1:3030/refreshnow').then(()=>setTimeout(()=>location.reload(),1000))">↻ Refresh</button>
+                </div>
+                {{ if eq (.JSON.Int "count") 0 }}
+                  <p class="color-subdue">No new releases {{ if eq $w 0 }}today{{ else }}in the last {{ .JSON.String "windowDays" }} days{{ end }}.</p>
+                {{ else }}
+                  {{ range .JSON.Array "groups" }}
+                    <div class="size-h5 color-subdue margin-top-10 margin-bottom-5">{{ .String "label" }}</div>
+                    {{ range .Array "developers" }}
+                      <div class="size-h6 color-subdue margin-top-10 margin-bottom-5">— {{ .String "label" }}</div>
+                      <ul class="list list-gap-15">
+                        {{ range .Array "releases" }}
+                          <li class="flex gap-10 items-start">
+                            <div class="thumbnail-container thumbnail-parent">
+                              <img class="thumbnail" src="{{ .String "icon" }}" width="40" height="40" loading="lazy">
+                            </div>
+                            <div class="flex-1">
+                              <div class="flex justify-between items-center">
+                                <a class="size-h4 color-primary-if-not-visited" href="{{ .String "url" }}" target="_blank" rel="noreferrer">{{ .String "title" }}</a>
+                                <span {{ .String "releasedAt" | parseTime "rfc3339" | toRelativeTime }} class="color-subdue size-h6"></span>
+                              </div>
+                            </div>
+                          </li>
+                        {{ end }}
+                      </ul>
+                    {{ end }}
+                  {{ end }}
+                {{ end }}
+                <div class="color-subdue size-h6 margin-top-10">
+                  Updated <span {{ .JSON.String "fetchedAt" | parseTime "rfc3339" | toRelativeTime }}></span>
+                </div>
+              {{ else }}
+                <p class="color-negative">Fetch failed: {{ .Response.Status }}</p>
+              {{ end }}
