@@ -1,0 +1,27 @@
+{% set target = env.MISE_SCOPE | default(value="dev") %}
+{% if target == "scrapper" %}
+env = ["proton-pass", "fnox", "node", "scrapper"]
+{% elif target == "glance" %}
+env = ["glance"]
+{% elif target == "ci-lint" %}
+env = ["node", "lint"]
+{% elif target == "ci-test" %}
+env = ["proton-pass", "fnox", "node", "orchestration", "scrapper", "glance"]
+{% elif target == "ci-renovate" %}
+env = ["proton-pass", "fnox", "node", "github-app-ci-renovate"]
+{% elif target == "ci-release-please" %}
+env = ["proton-pass", "fnox", "node", "github-app-ci-release-please"]
+{% elif target == "ci-cleanup-packages" %}
+env = ["proton-pass", "fnox", "github-package-cleanup"]
+{% else %}
+env = [
+  "proton-pass",
+  "fnox",
+  "node",
+  "lint",
+  "orchestration",
+  "dev",
+  "scrapper",
+  "glance",
+]
+{% endif %}

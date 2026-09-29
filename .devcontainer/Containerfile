@@ -1,0 +1,49 @@
+FROM cgr.dev/chainguard/wolfi-base:latest@sha256:bef0f4d47edc72a93d1537eae54eb53db2b2cc352c028128ff0f16c5b5a3c1e4
+
+USER 0:0
+
+SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
+
+RUN apk add --no-cache \
+    bash=5.3-r13 \
+    crun=1.30.1-r0 \
+    curl=8.22.0-r3 \
+    ca-certificates=20260909-r1 \
+    ca-certificates-bundle=20260909-r1 \
+    fuse-overlayfs=1.18-r0 \
+    git=2.55.0-r8 \
+    libcap-utils=2.78-r3 \
+    libstdc++=16.2.0-r1 \
+    podman=6.0.0-r4 \
+    shadow=4.20.2-r1 \
+    shadow-subids=4.20.2-r1 \
+    slirp4netns=1.3.5-r1 \
+    tzdata=2026d-r0
+
+RUN groupadd -g 1000 dev \
+    && useradd -u 1000 -g 1000 -m -s /bin/bash dev
+
+RUN printf 'dev:1:999\ndev:1001:64535\n' > /etc/subuid \
+    && printf 'dev:1:999\ndev:1001:64535\n' > /etc/subgid
+
+RUN chmod 0755 /usr/bin/newuidmap /usr/bin/newgidmap \
+    && setcap cap_setuid=ep /usr/bin/newuidmap \
+    && setcap cap_setgid=ep /usr/bin/newgidmap
+
+RUN mkdir -p /etc/containers /usr/local/bin \
+    && printf '[storage]\ndriver = "overlay"\n\n[storage.options]\n[storage.options.overlay]\nmount_program = "/usr/bin/fuse-overlayfs"\nmountopt = "nodev,fsync=0"\nignore_chown_errors = "true"\n' > /etc/containers/storage.conf \
+    && printf '[engine]\ncgroup_manager = "cgroupfs"\nevents_logger = "file"\nruntime = "crun"\n[network]\ndefault_rootless_network_cmd = "slirp4netns"\n' > /etc/containers/containers.conf \
+    && printf '[install]\nminimumReleaseAge = 0\n' > /etc/bunfig.toml
+
+ENV MISE_VERSION=2026.9.16
+
+RUN curl -fsSL https://mise.run | MISE_VERSION="v${MISE_VERSION}" MISE_INSTALL_PATH=/usr/local/bin/mise sh \
+    && test -x /usr/local/bin/mise
+
+ENV _CONTAINERS_USERNS_CONFIGURED=""
+ENV BUN_SYSTEM_CONFIG=/etc/bunfig.toml
+ENV MISE_TRUSTED_CONFIG_PATHS=/workspaces/glance:/workspaces
+ENV PATH=/home/dev/.local/share/mise/shims:${PATH}
+
+USER 1000:1000
+WORKDIR /workspaces

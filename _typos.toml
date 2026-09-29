@@ -1,0 +1,6 @@
+[files]
+extend-exclude = ['CHANGELOG.md', 'fnox.toml', 'fnox.scrapper.toml']
+
+[default.extend-words]
+passt = 'passt'
+scrapper = 'scrapper'

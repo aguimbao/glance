@@ -1,0 +1,7 @@
+[env]
+FNOX_PROFILE = '{% if env.FNOX_PROFILE %}{{ env.FNOX_PROFILE }},{% endif %}scrapper'
+
+[tasks.typecheck]
+description = 'Typecheck scrapper via tsc'
+shell = 'nu -c'
+run = 'cd scraper; bun install; bun run check'

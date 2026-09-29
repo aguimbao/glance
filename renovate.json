@@ -1,0 +1,139 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "docker:pinDigests",
+    "helpers:pinGitHubActionDigests",
+    ":semanticCommits",
+    ":semanticPrefixChore",
+    ":semanticCommitScope(deps)"
+  ],
+  "dependencyDashboard": true,
+  "dependencyDashboardAutoclose": true,
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 0,
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Self-images: bump only on release version tags; never chase digest-only drift",
+      "matchDepNames": ["ghcr.io/aguimbao/glance-scrapper", "ghcr.io/aguimbao/glance"],
+      "matchUpdateTypes": ["digest"],
+      "enabled": false
+    },
+    {
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": false,
+      "matchPackageNames": ["*"]
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "pinDigests": true
+    },
+    {
+      "groupName": "lint tools",
+      "matchFileNames": ["**/.mise/config.lint.toml", "**/hk.pkl"]
+    },
+    {
+      "groupName": "node runtime",
+      "matchFileNames": ["**/.mise/config.node.toml"]
+    },
+    {
+      "groupName": "dev tools",
+      "matchFileNames": ["**/.mise/config.dev.toml"]
+    },
+    {
+      "groupName": "core tools",
+      "matchFileNames": ["**/.mise/config.fnox.toml", "**/.mise/config.proton-pass.toml"]
+    },
+    {
+      "groupName": "core tools",
+      "matchPackageNames": ["jdx/mise"]
+    },
+    {
+      "groupName": "orchestration tools",
+      "matchManagers": ["mise"],
+      "matchFileNames": ["**/.mise/config.orchestration.toml"]
+    },
+    {
+      "groupName": "wolfi packages",
+      "matchDatasources": ["custom.apk-wolfi"]
+    },
+    {
+      "groupName": "github actions",
+      "matchManagers": ["github-actions"]
+    }
+  ],
+  "customDatasources": {
+    "apk-wolfi": {
+      "defaultRegistryUrlTemplate": "https://cwaits6.github.io/apk-datasource/x86_64/{{packageName}}.json",
+      "format": "json"
+    }
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Containerfile base image updater",
+      "managerFilePatterns": ["/(^|/)Containerfile.*$/"],
+      "matchStrings": [
+        "FROM (?<depName>[^:\\s]+):(?<currentValue>[^@\\s]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Wolfi apk package updater",
+      "managerFilePatterns": [
+        "/(^|/)(?:\\.?devcontainer/)?(?:Dockerfile|Containerfile).*$/",
+        "/(^|/)Containerfile.*$/"
+      ],
+      "matchStringsStrategy": "recursive",
+      "matchStrings": [
+        "apk\\s+add[^\\n\\\\]*(?:\\\\[^\\S\\n]*\\n[^\\n\\\\]*)*",
+        "(?<depName>[a-zA-Z0-9][a-zA-Z0-9._+-]*)=(?<currentValue>[0-9][^\\s\\\\]+)"
+      ],
+      "datasourceTemplate": "custom.apk-wolfi",
+      "versioningTemplate": "loose"
+    },
+    {
+      "customType": "regex",
+      "description": "Pitchfork daemon image updater",
+      "managerFilePatterns": ["/(^|/)pitchfork\\.toml$/"],
+      "matchStrings": [
+        "(?:run = [\"'][^\"']*\\s)(?<depName>[a-z0-9._/-]+):(?<currentValue>[a-zA-Z0-9._-]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\\s"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Act runner image updater",
+      "managerFilePatterns": ["/(^|/)\\.actrc$/"],
+      "matchStrings": [
+        "-P\\s+[a-zA-Z0-9._-]+=(?<depName>[^:\\s]+):(?<currentValue>[^@\\s]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "hk.pkl package version updater",
+      "managerFilePatterns": ["/(^|/)hk\\.pkl$/"],
+      "matchStrings": [
+        "package://github\\.com/(?<depName>jdx/hk)/releases/download/v(?<currentValue>[^/]+)/hk@(?<currentVersion>[^#]+)#/"
+      ],
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "Mise CLI binary updater",
+      "managerFilePatterns": [
+        "/(^|/)(?:\\.?devcontainer/)?(?:Dockerfile|Containerfile).*$/",
+        "/(^|/)Containerfile.*$/"
+      ],
+      "matchStrings": ["ENV\\s+MISE_VERSION=(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"],
+      "depNameTemplate": "jdx/mise",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v?(?<version>.+)$"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+# Local fnox overrides
+fnox.local.toml
+fnox.*.local.toml
+node_modules/
+scraper/node_modules/
+*.local

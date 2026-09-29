@@ -1,0 +1,18 @@
+env = 'exec'
+
+[providers.protonpass]
+type = 'proton-pass'
+
+[secrets]
+PROTON_PASS_CREDENTIALS = { default = 'true' }
+
+[profiles.scrapper.secrets]
+GITHUB_TOKEN = { provider = 'protonpass', value = 'nSNgRaA5DcOIbKMGo5ed91kOv6eiYlKWHdD-bOQaD1T92N_lkMEFc1s__p0FayfmkYxQK8Ka7rbep-YRTEb8pA==/CjT9NC8oPa2y3If6OYcH4_EDaNO23-6LGNJdNqA7OFUiU_iGSsgd1hRD6IP-eS-nx8YiQUWru4-a4bltU_mArA==/READ_PUBLIC_PAT' }
+PLAYSTORE_DEV_IDS = { provider = 'protonpass', value = 'MkuxUTjeYqUgsgWbV-ccpno2RJXnZTmAKCIOSwwkdlYdea-70-X5zlzwbpYBHiU5E_rgcZpbL9At9tfAKmmxmA==/R64soTnATbQ2oaWXKreXXYM9mKVaPJa4iRpvGCvQRIwL0F_Bh4o9BYGbD0NxBXNKIeEzvDcS7SOxlUrJL9Aoyw==/PLAYSTORE_DEV_IDS' }
+PLAYSTORE_APP_IDS = { provider = 'protonpass', value = 'MkuxUTjeYqUgsgWbV-ccpno2RJXnZTmAKCIOSwwkdlYdea-70-X5zlzwbpYBHiU5E_rgcZpbL9At9tfAKmmxmA==/R64soTnATbQ2oaWXKreXXYM9mKVaPJa4iRpvGCvQRIwL0F_Bh4o9BYGbD0NxBXNKIeEzvDcS7SOxlUrJL9Aoyw==/PLAYSTORE_APP_IDS' }
+FIREFOX_DEV_IDS = { provider = 'protonpass', value = 'MkuxUTjeYqUgsgWbV-ccpno2RJXnZTmAKCIOSwwkdlYdea-70-X5zlzwbpYBHiU5E_rgcZpbL9At9tfAKmmxmA==/R64soTnATbQ2oaWXKreXXYM9mKVaPJa4iRpvGCvQRIwL0F_Bh4o9BYGbD0NxBXNKIeEzvDcS7SOxlUrJL9Aoyw==/FIREFOX_DEV_IDS' }
+FIREFOX_APP_IDS = { provider = 'protonpass', value = 'MkuxUTjeYqUgsgWbV-ccpno2RJXnZTmAKCIOSwwkdlYdea-70-X5zlzwbpYBHiU5E_rgcZpbL9At9tfAKmmxmA==/R64soTnATbQ2oaWXKreXXYM9mKVaPJa4iRpvGCvQRIwL0F_Bh4o9BYGbD0NxBXNKIeEzvDcS7SOxlUrJL9Aoyw==/FIREFOX_APP_IDS' }
+GITHUB_USERS_WITH_STARS = { provider = 'protonpass', value = 'MkuxUTjeYqUgsgWbV-ccpno2RJXnZTmAKCIOSwwkdlYdea-70-X5zlzwbpYBHiU5E_rgcZpbL9At9tfAKmmxmA==/R64soTnATbQ2oaWXKreXXYM9mKVaPJa4iRpvGCvQRIwL0F_Bh4o9BYGbD0NxBXNKIeEzvDcS7SOxlUrJL9Aoyw==/GITHUB_USERS_WITH_STARS' }
+TZ = { provider = 'protonpass', value = 'MkuxUTjeYqUgsgWbV-ccpno2RJXnZTmAKCIOSwwkdlYdea-70-X5zlzwbpYBHiU5E_rgcZpbL9At9tfAKmmxmA==/R64soTnATbQ2oaWXKreXXYM9mKVaPJa4iRpvGCvQRIwL0F_Bh4o9BYGbD0NxBXNKIeEzvDcS7SOxlUrJL9Aoyw==/TZ' }
+CALENDARS = { provider = 'protonpass', value = 'MkuxUTjeYqUgsgWbV-ccpno2RJXnZTmAKCIOSwwkdlYdea-70-X5zlzwbpYBHiU5E_rgcZpbL9At9tfAKmmxmA==/R64soTnATbQ2oaWXKreXXYM9mKVaPJa4iRpvGCvQRIwL0F_Bh4o9BYGbD0NxBXNKIeEzvDcS7SOxlUrJL9Aoyw==/CALENDARS' }
+RSS_FEEDS = { provider = 'protonpass', value = 'MkuxUTjeYqUgsgWbV-ccpno2RJXnZTmAKCIOSwwkdlYdea-70-X5zlzwbpYBHiU5E_rgcZpbL9At9tfAKmmxmA==/R64soTnATbQ2oaWXKreXXYM9mKVaPJa4iRpvGCvQRIwL0F_Bh4o9BYGbD0NxBXNKIeEzvDcS7SOxlUrJL9Aoyw==/RSS_FEEDS' }

@@ -1,0 +1,236 @@
+[tools]
+'aqua:jdx/pitchfork' = '2.28.0'
+
+[tasks.up]
+description = 'Create stack resources and start daemons via pitchfork. Supports build and test isolation'
+shell = 'nu -c'
+usage = '''
+flag "-b --build" help="Build container images locally"
+flag "-n --no-cache" help="Bypass cache for local image build"
+flag "-t --test" help="Use test isolated stack (glance-test-*)"
+flag "-f --force-restart" help="Restart daemons if already running"
+'''
+run = '''
+def volume-exists [name: string] {
+  (podman volume inspect $name | complete | get exit_code) == 0
+}
+
+def network-exists [name: string] {
+  (podman network inspect $name | complete | get exit_code) == 0
+}
+
+def image-exists [name: string] {
+  (podman image exists $name | complete | get exit_code) == 0
+}
+
+let build_requested = (($env.usage_build? | default "false") == "true")
+let no_cache = (($env.usage_no_cache? | default "false") == "true")
+let is_test = (($env.usage_test? | default "false") == "true")
+let is_force = (($env.usage_force_restart? | default "false") == "true")
+let force_args = if $is_force { ["--force"] } else { [] }
+
+let target_scrapper_img = if $is_test { "localhost/glance-scrapper:test" } else { "localhost/glance-scrapper:latest" }
+let target_glance_img = if $is_test { "localhost/glance-app:test" } else { "localhost/glance-app:latest" }
+
+if $build_requested or not (image-exists $target_scrapper_img) or not (image-exists $target_glance_img) {
+  let build_flags = if $no_cache { ["--no-cache"] } else { [] }
+  let gh_token_var = if ($env.GH_TOKEN? | is-not-empty) { "GH_TOKEN" } else if ($env.GITHUB_TOKEN? | is-not-empty) { "GITHUB_TOKEN" } else { "" }
+  let secret_flags = if ($gh_token_var | is-not-empty) {
+    ["--secret", $"id=GITHUB_TOKEN,env=($gh_token_var)"]
+  } else { [] }
+  podman build ...$build_flags ...$secret_flags --format docker -f Containerfile.scrapper -t $target_scrapper_img .
+  podman build ...$build_flags --format docker -f Containerfile.glance -t $target_glance_img .
+}
+
+if $is_test {
+  if not (network-exists glance-test-net) {
+    podman network create glance-test-net
+  }
+} else {
+  if not (network-exists glance-net) {
+    podman network create glance-net
+  }
+}
+
+mut pat = ($env.PROTON_PASS_PERSONAL_ACCESS_TOKEN? | default "" | str trim)
+let secret_name = if $is_test { "glance-test-proton-pass-pat" } else { "glance-proton-pass-pat" }
+let secret_exists = (podman secret exists $secret_name | complete | get exit_code) == 0
+if ($pat | is-empty) and not $secret_exists and (is-terminal --stdin) {
+  $pat = (input --suppress-output "Proton Pass personal access token for container: " | str trim)
+  if ($pat | is-not-empty) { $env.PROTON_PASS_PERSONAL_ACCESS_TOKEN = $pat }
+}
+if ($pat | is-not-empty) and not $secret_exists {
+  $pat | podman secret create $secret_name -
+}
+
+mise run setup-pass-cli
+$env.PROTON_PASS_PERSONAL_ACCESS_TOKEN = ""
+
+let status = (
+    pitchfork supervisor status --json
+    | from json
+    | get status
+)
+
+if $status != "up" {
+    pitchfork supervisor start
+}
+
+if $is_test {
+  pitchfork start ...$force_args glance-test-scrapper glance-test-app
+} else {
+  pitchfork start ...$force_args glance-scrapper glance-app
+}
+'''
+
+[tasks.down]
+description = 'Stop daemons via pitchfork. Optional resource removal'
+shell = 'nu -c'
+usage = '''
+flag "-p --prune" help="Remove network, images and containers after stopping"
+flag "-v --volumes" help="Also remove volumes (requires --prune)"
+flag "-s --secrets" help="Also remove podman secret (requires --prune)"
+flag "--pitchfork-clean" help="Run pitchfork clean after stopping (drop stopped daemon entries)"
+flag "-t --test" help="Target test stack (glance-test-*)"
+'''
+run = '''
+def container-exists [name: string] {
+  (podman container exists $name | complete | get exit_code) == 0
+}
+
+def image-exists [name: string] {
+  (podman image exists $name | complete | get exit_code) == 0
+}
+
+def network-exists [name: string] {
+  (podman network inspect $name | complete | get exit_code) == 0
+}
+
+def volume-exists [name: string] {
+  (podman volume inspect $name | complete | get exit_code) == 0
+}
+
+def secret-exists [name: string] {
+  (podman secret exists $name | complete | get exit_code) == 0
+}
+
+let prune_requested = (($env.usage_prune? | default "false") == "true")
+let volumes_requested = (($env.usage_volumes? | default "false") == "true")
+let is_test = (($env.usage_test? | default "false") == "true")
+
+if $volumes_requested and not $prune_requested {
+  error make { msg: "--volumes requires --prune" }
+}
+
+let secrets_requested = (($env.usage_secrets? | default "false") == "true")
+if $secrets_requested and not $prune_requested {
+  error make { msg: "--secrets requires --prune" }
+}
+let pitchfork_clean = (($env.usage_pitchfork_clean? | default "false") == "true")
+
+let status = (
+    pitchfork supervisor status --json
+    | from json
+    | get status
+)
+
+if $status != "up" {
+    pitchfork supervisor start
+}
+
+if $is_test {
+  pitchfork stop glance-test-app glance-test-scrapper
+
+  if $prune_requested {
+    for name in [glance-test-app glance-test-scrapper] {
+      if (container-exists $name) {
+        podman rm --force --time 40 $name
+      }
+    }
+
+    if (network-exists glance-test-net) {
+      podman network rm glance-test-net
+    }
+
+    for img in [localhost/glance-app:test localhost/glance-scrapper:test] {
+      if (image-exists $img) {
+        podman image rm $img
+      }
+    }
+
+    if $secrets_requested {
+      if (secret-exists glance-test-proton-pass-pat) {
+        podman secret rm glance-test-proton-pass-pat
+      }
+    }
+
+    podman image prune --force
+  }
+} else {
+  pitchfork stop glance-app glance-scrapper
+
+  if $prune_requested {
+    for name in [glance-app glance-scrapper] {
+      if (container-exists $name) {
+        podman rm --force --time 40 $name
+      }
+    }
+
+    if (network-exists glance-net) {
+      podman network rm glance-net
+    }
+
+    for img in [localhost/glance-app:latest localhost/glance-scrapper:latest] {
+      if (image-exists $img) {
+        podman image rm $img
+      }
+    }
+
+    if $secrets_requested {
+      if (secret-exists glance-proton-pass-pat) {
+        podman secret rm glance-proton-pass-pat
+      }
+    }
+
+    podman image prune --force
+  }
+}
+
+if $pitchfork_clean {
+  pitchfork clean
+}
+'''
+
+[tasks.test]
+description = 'Run full stack test and teardown. Builds test images by default or runs existing test images with --no-build'
+shell = 'nu -c'
+usage = '''
+flag "-n --no-build" help="Run test images without rebuilding"
+'''
+run = '''
+let no_build = (($env.usage_no_build? | default "false") == "true")
+let test_result = try {
+  if $no_build {
+    mise run up --test --force-restart
+  } else {
+    mise run up --build --no-cache --test --force-restart
+  }
+  print "[test] stack up — waiting for scrapper healthcheck"
+  podman healthcheck run glance-test-scrapper
+  print "[test] scrapper healthy — testing endpoints"
+  podman exec glance-test-scrapper bun src/healthcheck.ts
+  print "[test] waiting for glance-app response"
+  podman exec glance-test-app wget -q -O /dev/null http://127.0.0.1:8080/
+  print "[test] stack healthy"
+  true
+} catch {|e|
+  print -e $"[test] FAILED: ($e.msg)"
+  false
+}
+
+mise run down --test --prune --secrets --pitchfork-clean
+
+if not $test_result {
+  error make { msg: "stack test failed" }
+}
+'''

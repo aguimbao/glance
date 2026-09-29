@@ -1,0 +1,32 @@
+[tools]
+'aqua:nektos/act' = '0.2.89'
+'npm:@devcontainers/cli' = '0.89.0'
+
+[env]
+FNOX_PROFILE = '{% if env.FNOX_PROFILE %}{{ env.FNOX_PROFILE }},{% endif %}github-local-renovate'
+
+[tasks.renovate]
+description = 'Run Renovate dependency updates locally or remotely'
+shell = 'nu -c'
+usage = '''
+flag "-r --remote" help="Run remote Renovate against GitHub repository to open PRs"
+flag "-d --dry-run" help="Perform dry run without modifying repository (requires -r)"
+'''
+run = '''
+let is_remote = (($env.usage_remote? | default "false") == "true")
+let is_dry_run = (($env.usage_dry_run? | default "false") == "true")
+
+with-env { EDITOR: null, VISUAL: null } {
+  if $is_remote {
+    let dry_args = if $is_dry_run { ["--dry-run=full"] } else { [] }
+    fnox exec -P github-local-renovate -- renovate --expose-all-env=true ...$dry_args aguimbao/glance
+  } else {
+    fnox exec -P github-local-renovate -- renovate --expose-all-env=true --platform=local
+  }
+}
+'''
+
+[tasks.ci]
+description = 'Run GitHub Actions workflows locally via act'
+shell = 'nu -c'
+run = 'with-env { DOCKER_HOST: ($env.DOCKER_HOST? | default $"unix:($env.XDG_RUNTIME_DIR? | default $"/run/user/(^id -u | str trim)")/podman/podman.sock") } { ^act }'
