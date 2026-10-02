@@ -2,7 +2,7 @@
 'aqua:protonpass/pass-cli' = '2.4.1'
 
 [env]
-PROTON_PASS_SESSION_DIR = "{{ [xdg_cache_home, 'pass-cli-' ~ (config_root | trim_start_matches(pat='/') | replace(from='/', to='__'))] | join_path }}"
+PROTON_PASS_SESSION_DIR = "{{ [xdg_cache_home, 'pass-cli-' ~ (config_root | trim_start(pat='/') | replace(from='/', to='__'))] | join_path }}"
 
 [tasks.setup-pass-cli]
 description = 'Authenticate Proton Pass CLI via personal access token'
