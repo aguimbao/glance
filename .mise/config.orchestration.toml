@@ -73,7 +73,7 @@ let status = (
 )
 
 if $status != "up" {
-    error make { msg: "pitchfork supervisor is not running" }
+    pitchfork supervisor start
 }
 
 if $is_test {
@@ -135,7 +135,7 @@ let status = (
 )
 
 if $status != "up" {
-    error make { msg: "pitchfork supervisor is not running" }
+    pitchfork supervisor start
 }
 
 if $is_test {
