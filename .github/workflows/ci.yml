@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   lint:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       MISE_ENV: "ci-lint"
     permissions:
@@ -50,7 +50,7 @@ jobs:
               - 'scraper/**'
               - '.github/workflows/ci.yml'
 
-      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
         # zizmor: ignore[cache-poisoning]
         with:
           cache: true
@@ -75,7 +75,7 @@ jobs:
     needs:
       - lint
     if: needs.lint.outputs.container == 'true' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     env:
@@ -86,7 +86,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
         # zizmor: ignore[cache-poisoning]
         with:
           cache: true
@@ -99,7 +99,7 @@ jobs:
         run: mise run test
 
   ci-gate:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs:
       - lint
       - test
@@ -117,7 +117,7 @@ jobs:
           exit 1
 
   publish:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs:
       - lint
       - test
