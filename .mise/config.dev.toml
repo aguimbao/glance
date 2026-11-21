@@ -1,6 +1,6 @@
 [tools]
-'aqua:nektos/act' = '0.2.89'
-'npm:@devcontainers/cli' = '0.89.0'
+'aqua:nektos/act' = '0.2.98'
+'npm:@devcontainers/cli' = '0.91.0'
 
 [env]
 FNOX_PROFILE = '{% if env.FNOX_PROFILE %}{{ env.FNOX_PROFILE }},{% endif %}github-local-renovate'
