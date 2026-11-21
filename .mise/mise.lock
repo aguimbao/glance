@@ -3,41 +3,48 @@
 lockfile_version = 3
 
 [[tools."aqua:nushell/nushell"]]
-version = "0.116.0"
+version = "0.117.0"
 backend = "aqua:nushell/nushell"
-specifiers = ["0.116.0"]
+specifiers = ["0.117.0"]
 
 [tools."aqua:nushell/nushell"."platforms.linux-arm64"]
-checksum = "sha256:bd854a1c7286cabb7830e744810c27152e3d332192e75cea9e3c92dced4e3dce"
-url = "https://github.com/nushell/nushell/releases/download/0.116.0/nu-0.116.0-aarch64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/nushell/nushell/releases/assets/591220342"
+checksum = "sha256:e1a4ff6baa2d7976bb51eccfd44295a871cdd0bc69890a5e9b3b83a0abd9acb1"
+checksum_source = "mise-versions"
+url = "https://github.com/nushell/nushell/releases/download/0.117.0/nu-0.117.0-aarch64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/nushell/nushell/releases/assets/729060198"
 
 [tools."aqua:nushell/nushell"."platforms.linux-arm64-musl"]
-checksum = "sha256:bd854a1c7286cabb7830e744810c27152e3d332192e75cea9e3c92dced4e3dce"
-url = "https://github.com/nushell/nushell/releases/download/0.116.0/nu-0.116.0-aarch64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/nushell/nushell/releases/assets/591220342"
+checksum = "sha256:e1a4ff6baa2d7976bb51eccfd44295a871cdd0bc69890a5e9b3b83a0abd9acb1"
+checksum_source = "mise-versions"
+url = "https://github.com/nushell/nushell/releases/download/0.117.0/nu-0.117.0-aarch64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/nushell/nushell/releases/assets/729060198"
 
 [tools."aqua:nushell/nushell"."platforms.linux-x64"]
-checksum = "sha256:9f73a6913f9515a621bd916dc91d7f3e0494e488161c2d686f6b98ffa0555945"
-url = "https://github.com/nushell/nushell/releases/download/0.116.0/nu-0.116.0-x86_64-unknown-linux-gnu.tar.gz"
-url_api = "https://api.github.com/repos/nushell/nushell/releases/assets/591232732"
+checksum = "sha256:33b907da92b0e80bd10fea9fa0e8a1624cabfebd89ee2568e365da3c492ffc68"
+checksum_source = "mise-versions"
+url = "https://github.com/nushell/nushell/releases/download/0.117.0/nu-0.117.0-x86_64-unknown-linux-gnu.tar.gz"
+url_api = "https://api.github.com/repos/nushell/nushell/releases/assets/729055920"
 
 [tools."aqua:nushell/nushell"."platforms.linux-x64-musl"]
-checksum = "sha256:7b91aeef575080f4b90405ba4512f4ccd0c21a6fbcd99f18bde3272c75213f00"
-url = "https://github.com/nushell/nushell/releases/download/0.116.0/nu-0.116.0-x86_64-unknown-linux-musl.tar.gz"
-url_api = "https://api.github.com/repos/nushell/nushell/releases/assets/591225382"
+checksum = "sha256:2b808786d44af41170a29f8b9a15b5113bb6ea5dda9221098eca932f8a149924"
+checksum_source = "mise-versions"
+url = "https://github.com/nushell/nushell/releases/download/0.117.0/nu-0.117.0-x86_64-unknown-linux-musl.tar.gz"
+url_api = "https://api.github.com/repos/nushell/nushell/releases/assets/729056401"
 
 [tools."aqua:nushell/nushell"."platforms.macos-arm64"]
-checksum = "sha256:8d3169054b0e8f04b60b38ac1673acf61cbf66c6d8073ebc732d5bc108b3add6"
-url = "https://github.com/nushell/nushell/releases/download/0.116.0/nu-0.116.0-aarch64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/nushell/nushell/releases/assets/591247156"
+checksum = "sha256:1d0e642ef3bff22113a82749a0fa24a0126f4fea0db46a5909e56e94a4b57527"
+checksum_source = "mise-versions"
+url = "https://github.com/nushell/nushell/releases/download/0.117.0/nu-0.117.0-aarch64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/nushell/nushell/releases/assets/729066896"
 
 [tools."aqua:nushell/nushell"."platforms.macos-x64"]
-checksum = "sha256:c03c8cc16e7a1d616d0dd5992b114ae28d84b622e00b43905118147cc0bccdaf"
-url = "https://github.com/nushell/nushell/releases/download/0.116.0/nu-0.116.0-x86_64-apple-darwin.tar.gz"
-url_api = "https://api.github.com/repos/nushell/nushell/releases/assets/591247388"
+checksum = "sha256:f44a99227d1fd19d7da9b4a60adbe32bf45700dc25f1a3cb08e4979dee0c1b2f"
+checksum_source = "mise-versions"
+url = "https://github.com/nushell/nushell/releases/download/0.117.0/nu-0.117.0-x86_64-apple-darwin.tar.gz"
+url_api = "https://api.github.com/repos/nushell/nushell/releases/assets/729050536"
 
 [tools."aqua:nushell/nushell"."platforms.windows-x64"]
-checksum = "sha256:745b165d847e34b5dea80c2cfc867383c02b907d288a59a44b25e39bcac14015"
-url = "https://github.com/nushell/nushell/releases/download/0.116.0/nu-0.116.0-x86_64-pc-windows-msvc.zip"
-url_api = "https://api.github.com/repos/nushell/nushell/releases/assets/591270585"
+checksum = "sha256:8a135f25d3f22f1542107eb117e94628af35ce65402cbc098bfb26914227d3b2"
+checksum_source = "mise-versions"
+url = "https://github.com/nushell/nushell/releases/download/0.117.0/nu-0.117.0-x86_64-pc-windows-msvc.zip"
+url_api = "https://api.github.com/repos/nushell/nushell/releases/assets/729111223"

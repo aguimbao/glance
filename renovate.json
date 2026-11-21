@@ -8,8 +8,7 @@
     ":semanticPrefixChore",
     ":semanticCommitScope(deps)"
   ],
-  "dependencyDashboard": true,
-  "dependencyDashboardAutoclose": true,
+  "dependencyDashboard": { "enabled": true, "autoclose": true },
   "prHourlyLimit": 0,
   "prConcurrentLimit": 0,
   "labels": ["dependencies"],

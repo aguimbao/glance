@@ -5,4 +5,4 @@ minimum_release_age = '30d'
 locked = true
 
 [tools]
-'aqua:nushell/nushell' = '0.116.0'
+'aqua:nushell/nushell' = '0.117.0'

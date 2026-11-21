@@ -1,5 +1,5 @@
 [tools]
-'aqua:protonpass/pass-cli' = '2.4.1'
+'aqua:protonpass/pass-cli' = '2.7.1'
 
 [env]
 PROTON_PASS_SESSION_DIR = "{{ [xdg_cache_home, 'pass-cli-' ~ (config_root | trim_start(pat='/') | replace(from='/', to='__'))] | join_path }}"

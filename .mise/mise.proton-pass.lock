@@ -3,41 +3,48 @@
 lockfile_version = 3
 
 [[tools."aqua:protonpass/pass-cli"]]
-version = "2.4.1"
+version = "2.7.1"
 backend = "aqua:protonpass/pass-cli"
-specifiers = ["2.4.1"]
+specifiers = ["2.7.1"]
 
 [tools."aqua:protonpass/pass-cli"."platforms.linux-arm64"]
-checksum = "sha256:655a3f6c6ebf86b0bc67ccb2e099a0901a3adf13f8cc074d965886bfe70403fa"
-url = "https://github.com/protonpass/pass-cli/releases/download/2.4.1/pass-cli-linux-aarch64"
-url_api = "https://api.github.com/repos/protonpass/pass-cli/releases/assets/578598843"
+checksum = "sha256:43616b8c38b44dae702679b376726889a1f9dc767cf86932b29b03d89a93b283"
+checksum_source = "mise-versions"
+url = "https://github.com/protonpass/pass-cli/releases/download/2.7.1/pass-cli-linux-aarch64"
+url_api = "https://api.github.com/repos/protonpass/pass-cli/releases/assets/754345233"
 
 [tools."aqua:protonpass/pass-cli"."platforms.linux-arm64-musl"]
-checksum = "sha256:655a3f6c6ebf86b0bc67ccb2e099a0901a3adf13f8cc074d965886bfe70403fa"
-url = "https://github.com/protonpass/pass-cli/releases/download/2.4.1/pass-cli-linux-aarch64"
-url_api = "https://api.github.com/repos/protonpass/pass-cli/releases/assets/578598843"
+checksum = "sha256:43616b8c38b44dae702679b376726889a1f9dc767cf86932b29b03d89a93b283"
+checksum_source = "mise-versions"
+url = "https://github.com/protonpass/pass-cli/releases/download/2.7.1/pass-cli-linux-aarch64"
+url_api = "https://api.github.com/repos/protonpass/pass-cli/releases/assets/754345233"
 
 [tools."aqua:protonpass/pass-cli"."platforms.linux-x64"]
-checksum = "sha256:f4188430466e0a3d668b56791a8b430162cb20ceb108fed4fdbfcfe77d3080e6"
-url = "https://github.com/protonpass/pass-cli/releases/download/2.4.1/pass-cli-linux-x86_64"
-url_api = "https://api.github.com/repos/protonpass/pass-cli/releases/assets/578598849"
+checksum = "sha256:3e9520fe79ab4698e03905c8bf0fff4889b3028975e832a5f801a9c82008b612"
+checksum_source = "mise-versions"
+url = "https://github.com/protonpass/pass-cli/releases/download/2.7.1/pass-cli-linux-x86_64"
+url_api = "https://api.github.com/repos/protonpass/pass-cli/releases/assets/754345234"
 
 [tools."aqua:protonpass/pass-cli"."platforms.linux-x64-musl"]
-checksum = "sha256:f4188430466e0a3d668b56791a8b430162cb20ceb108fed4fdbfcfe77d3080e6"
-url = "https://github.com/protonpass/pass-cli/releases/download/2.4.1/pass-cli-linux-x86_64"
-url_api = "https://api.github.com/repos/protonpass/pass-cli/releases/assets/578598849"
+checksum = "sha256:3e9520fe79ab4698e03905c8bf0fff4889b3028975e832a5f801a9c82008b612"
+checksum_source = "mise-versions"
+url = "https://github.com/protonpass/pass-cli/releases/download/2.7.1/pass-cli-linux-x86_64"
+url_api = "https://api.github.com/repos/protonpass/pass-cli/releases/assets/754345234"
 
 [tools."aqua:protonpass/pass-cli"."platforms.macos-arm64"]
-checksum = "sha256:4b1f8eaa92d44ccdddd2b6f716c8f3e0ed388cb28708059bbbc86170fc39539c"
-url = "https://github.com/protonpass/pass-cli/releases/download/2.4.1/pass-cli-macos-aarch64"
-url_api = "https://api.github.com/repos/protonpass/pass-cli/releases/assets/578598869"
+checksum = "sha256:0f5f749372c77f279f92463c56c3dda777fc3157e5f90ef49ade17bca7e46ba3"
+checksum_source = "mise-versions"
+url = "https://github.com/protonpass/pass-cli/releases/download/2.7.1/pass-cli-macos-aarch64"
+url_api = "https://api.github.com/repos/protonpass/pass-cli/releases/assets/754345265"
 
 [tools."aqua:protonpass/pass-cli"."platforms.macos-x64"]
-checksum = "sha256:a3a61cf2f77dbd10bc9014704b15b45f6ebab7fdc363a669a04280fc38a789d0"
-url = "https://github.com/protonpass/pass-cli/releases/download/2.4.1/pass-cli-macos-x86_64"
-url_api = "https://api.github.com/repos/protonpass/pass-cli/releases/assets/578598850"
+checksum = "sha256:ea3a6a133292230008e577ebcdf1a0a604177fd9107fdee287c8ed84ef164cd9"
+checksum_source = "mise-versions"
+url = "https://github.com/protonpass/pass-cli/releases/download/2.7.1/pass-cli-macos-x86_64"
+url_api = "https://api.github.com/repos/protonpass/pass-cli/releases/assets/754345240"
 
 [tools."aqua:protonpass/pass-cli"."platforms.windows-x64"]
-checksum = "sha256:0bd03efa69abe0d85df6eba8bbc5b72e63ba0ed1cbfb288d9cb4402b5f733b9e"
-url = "https://github.com/protonpass/pass-cli/releases/download/2.4.1/pass-cli-windows-x86_64.zip"
-url_api = "https://api.github.com/repos/protonpass/pass-cli/releases/assets/578598895"
+checksum = "sha256:d803bea784ee55abe6091fd4e493d8c3cfefaef48748b03760be73401fa3838a"
+checksum_source = "mise-versions"
+url = "https://github.com/protonpass/pass-cli/releases/download/2.7.1/pass-cli-windows-x86_64.zip"
+url_api = "https://api.github.com/repos/protonpass/pass-cli/releases/assets/754345334"
