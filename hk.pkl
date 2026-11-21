@@ -31,12 +31,8 @@ local linters = new Mapping<String, Step> {
         )
     }
     ["pkl"] = Builtins.pkl
-    ["tombi"] = (Builtins.tombi) {
-        exclude = List(".miserc.toml")
-    }
-    ["tombi-format"] = (Builtins.tombi_format) {
-        exclude = List(".miserc.toml")
-    }
+    ["tombi"] = Builtins.tombi
+    ["tombi-format"] = Builtins.tombi_format
     ["trailing-whitespace"] = Builtins.trailing_whitespace
     ["typos"] = Builtins.typos
     ["yamllint"] = Builtins.yamllint

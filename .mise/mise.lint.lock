@@ -133,6 +133,7 @@ provenance = "github-attestations"
 version = "2.3.1"
 backend = "aqua:jdx/hk"
 specifiers = ["2.3.1"]
+unsupported_platforms = ["macos-x64"]
 
 [tools."aqua:jdx/hk"."platforms.linux-arm64"]
 checksum = "sha256:b81851bcf9d64b438272c49a6164a333b3b3dbc9523fc53610e407ad5d1da1ec"
