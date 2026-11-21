@@ -8,6 +8,7 @@ RUN apk add --no-cache \
     bash=5.3-r14 \
     curl=8.23.0-r4 \
     ca-certificates-bundle=20261020-r0 \
+    libatomic=16.2.0-r5 \
     libstdc++=16.2.0-r5 \
     shadow=4.20.3-r4
 
@@ -47,6 +48,7 @@ USER 0:0
 
 RUN apk add --no-cache \
     ca-certificates-bundle=20261020-r0 \
+    libatomic=16.2.0-r5 \
     libstdc++=16.2.0-r5 \
     libudev=261.3-r5 \
     shadow=4.20.3-r4
