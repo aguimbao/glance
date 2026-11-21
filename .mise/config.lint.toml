@@ -14,7 +14,7 @@
 ] }
 'npm:markdownlint-cli2' = '0.24.2'
 'aqua:wasilibs/go-yamllint' = '1.38.0'
-'aqua:apple/pkl' = '0.32.1'
+'aqua:apple/pkl' = { version = '0.33.1', os = ['linux', 'macos/arm64', 'windows'] }
 
 [tasks.lint]
 description = 'Run all code quality checks via hk'
