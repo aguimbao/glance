@@ -48,7 +48,7 @@ USER 0:0
 RUN apk add --no-cache \
     ca-certificates-bundle=20261020-r0 \
     libstdc++=16.2.0-r5 \
-    libudev=261.3-r5 \
+    libudev=262.2-r2 \
     shadow=4.20.3-r4
 
 RUN mkdir -p /usr/local/bin /home/node/.cache /home/node/.local/share \
