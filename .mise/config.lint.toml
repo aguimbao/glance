@@ -5,7 +5,7 @@
 'aqua:hadolint/hadolint' = '2.15.1'
 'aqua:oxc-project/oxc/oxlint' = '1.81.0'
 'aqua:oxc-project/oxc/oxfmt' = '1.81.0'
-'aqua:zizmorcore/zizmor' = '1.32.0'
+'aqua:zizmorcore/zizmor' = '1.33.1'
 'aqua:crate-ci/typos' = '1.52.2'
 'aqua:tombi-toml/tombi' = '1.11.3'
 'npm:@commitlint/cli' = '21.2.4'
