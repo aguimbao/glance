@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   lint:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       MISE_ENV: "ci-lint"
     permissions:
@@ -50,7 +50,7 @@ jobs:
               - 'scraper/**'
               - '.github/workflows/ci.yml'
 
-      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
         # zizmor: ignore[cache-poisoning]
         with:
           cache: true
@@ -75,7 +75,7 @@ jobs:
     needs:
       - lint
     if: needs.lint.outputs.container == 'true' || startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     env:
@@ -86,7 +86,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
         # zizmor: ignore[cache-poisoning]
         with:
           cache: true
@@ -95,11 +95,23 @@ jobs:
       - name: Setup tools
         run: mise install && mise run setup-pass-cli
 
+      - name: Allow podman to stop pasta (actions/runner-images#15182)
+        if: ${{ !env.ACT }}
+        run: |
+          # Temporary workaround for https://github.com/actions/runner-images/issues/15182
+          # Remove once upstream runner image fix (actions/runner-images#15184) is deployed.
+          pasta_profile="/etc/apparmor.d/usr.bin.pasta"
+          if [ -f "$pasta_profile" ] && ! sudo grep -q 'peer=podman' "$pasta_profile"; then
+            sudo sed -i '$ i\  signal (receive) set=(term) peer=podman,' "$pasta_profile"
+            sudo apparmor_parser -r "$pasta_profile"
+          fi
+          podman unshare --rootless-netns true
+
       - name: Run container tests
         run: mise run test
 
   ci-gate:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs:
       - lint
       - test
@@ -117,7 +129,7 @@ jobs:
           exit 1
 
   publish:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs:
       - lint
       - test
