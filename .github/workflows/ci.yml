@@ -95,6 +95,18 @@ jobs:
       - name: Setup tools
         run: mise install && mise run setup-pass-cli
 
+      - name: Allow podman to stop pasta (actions/runner-images#15182)
+        if: ${{ !env.ACT }}
+        run: |
+          # Temporary workaround for https://github.com/actions/runner-images/issues/15182
+          # Remove once upstream runner image fix (actions/runner-images#15184) is deployed.
+          pasta_profile="/etc/apparmor.d/usr.bin.pasta"
+          if [ -f "$pasta_profile" ] && ! sudo grep -q 'peer=podman' "$pasta_profile"; then
+            sudo sed -i '$ i\  signal (receive) set=(term) peer=podman,' "$pasta_profile"
+            sudo apparmor_parser -r "$pasta_profile"
+          fi
+          podman unshare --rootless-netns true
+
       - name: Run container tests
         run: mise run test
 
