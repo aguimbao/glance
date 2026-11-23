@@ -13,6 +13,7 @@ RUN apk add --no-cache \
     fuse-overlayfs=1.18-r2 \
     git=2.56.1-r1 \
     libcap-utils=2.78-r5 \
+    libatomic=16.2.0-r5 \
     libstdc++=16.2.0-r5 \
     podman=6.0.0-r4 \
     shadow=4.20.3-r4 \
