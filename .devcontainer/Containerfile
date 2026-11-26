@@ -36,7 +36,7 @@ RUN mkdir -p /etc/containers /usr/local/bin \
     && printf '[engine]\ncgroup_manager = "cgroupfs"\nevents_logger = "file"\nruntime = "crun"\n[network]\ndefault_rootless_network_cmd = "slirp4netns"\n' > /etc/containers/containers.conf \
     && printf '[install]\nminimumReleaseAge = 0\n' > /etc/bunfig.toml
 
-ENV MISE_VERSION=2026.11.12
+ENV MISE_VERSION=2026.11.14
 
 RUN curl -fsSL https://mise.run | MISE_VERSION="v${MISE_VERSION}" MISE_INSTALL_PATH=/usr/local/bin/mise sh \
     && test -x /usr/local/bin/mise
