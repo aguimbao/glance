@@ -498,9 +498,10 @@ backend = "npm:markdownlint-cli2"
 specifiers = ["0.24.2"]
 
 [[tools."npm:renovate"]]
-version = "44.257.9"
+version = "45.3.2"
+aube = { path = "locks/mise.lint/npm-renovate/45.3.2~cef60b42", digest = "sha256:87c4780c50754cdeaa6bd1820dc8bbb33aac0cab0f30e02beb61cdac8e5ce37e" }
 backend = "npm:renovate"
-specifiers = ["44.257.9"]
+specifiers = ["45.3.2"]
 
 [tools."npm:renovate".options]
 bun_args = "--trust"

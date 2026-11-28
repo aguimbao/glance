@@ -9,7 +9,7 @@
 'aqua:crate-ci/typos' = '1.52.2'
 'aqua:tombi-toml/tombi' = '1.11.3'
 'npm:@commitlint/cli' = '21.2.4'
-'npm:renovate' = { version = '44.257.9', bun_args = '--trust', trust_policy_excludes = [
+'npm:renovate' = { version = '45.3.2', bun_args = '--trust', trust_policy_excludes = [
   '@yarnpkg/libzip@3.2.2',
 ] }
 'npm:markdownlint-cli2' = '0.24.2'
