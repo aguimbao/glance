@@ -1,5 +1,5 @@
 [tools]
-'aqua:nektos/act' = '0.2.98'
+'aqua:nektos/act' = '0.2.99'
 'npm:@devcontainers/cli' = '0.91.0'
 
 [env]
