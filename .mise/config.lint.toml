@@ -1,5 +1,5 @@
 [tools]
-'aqua:jdx/hk' = { version = '2.13.0', postinstall = 'hk install' }
+'aqua:jdx/hk' = { version = '2.14.0', postinstall = 'hk install' }
 'aqua:rhysd/actionlint' = '1.7.12'
 'aqua:koalaman/shellcheck' = '0.11.0'
 'aqua:hadolint/hadolint' = '2.15.1'
@@ -9,7 +9,7 @@
 'aqua:crate-ci/typos' = '1.52.2'
 'aqua:tombi-toml/tombi' = '1.11.3'
 'npm:@commitlint/cli' = '21.2.4'
-'npm:renovate' = { version = '44.257.9', bun_args = '--trust', trust_policy_excludes = [
+'npm:renovate' = { version = '44.264.1', bun_args = '--trust', trust_policy_excludes = [
   '@yarnpkg/libzip@3.2.2',
 ] }
 'npm:markdownlint-cli2' = '0.24.2'
